@@ -266,6 +266,7 @@ return [
         'organize' => 'Organize',
         'signatures' => 'Signatures',
         'view_on_platform' => 'View on platform',
+        'view_comments' => 'View comments',
         'platform_status' => 'Platform status',
         'compliance_incomplete' => 'Some platform settings are incomplete or incompatible with the attached media.',
         'compliance' => [

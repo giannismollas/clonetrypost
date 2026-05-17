@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { IconCalendar, IconCircleCheck, IconLoader2, IconTrash } from '@tabler/icons-vue';
+import { Link } from '@inertiajs/vue3';
+import { IconCalendar, IconCircleCheck, IconLoader2, IconMessageCircle, IconTrash } from '@tabler/icons-vue';
 import { computed } from 'vue';
 
 import PickTimePopover from '@/components/posts/PickTimePopover.vue';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { index as inboxRoute } from '@/routes/app/inbox';
 
 interface Props {
-    post: { status: string };
+    post: { id: string; status: string };
     isSaving: boolean;
     showSaved: boolean;
     isSubmitting: boolean;
@@ -17,6 +19,8 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+
+const inboxUrl = computed(() => inboxRoute({ query: { post: props.post.id } }).url);
 
 const hasPickedTime = defineModel<boolean>('hasPickedTime', { required: true });
 const scheduledDateTime = defineModel<string>('scheduledDateTime', { required: true });
@@ -80,6 +84,15 @@ const isPublished = computed(() => ['published', 'partially_published'].includes
                     <span class="size-2 rounded-full bg-foreground/40" />
                     {{ $t('posts.edit.draft') }}
                 </span>
+            </div>
+
+            <div v-if="isPublished" class="flex items-center gap-2">
+                <Link :href="inboxUrl">
+                    <Button type="button" variant="outline">
+                        <IconMessageCircle class="size-4" />
+                        {{ $t('posts.edit.view_comments') }}
+                    </Button>
+                </Link>
             </div>
 
             <div v-if="!isReadOnly" class="flex items-center gap-2">

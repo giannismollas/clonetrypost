@@ -266,6 +266,7 @@ return [
         'cancel' => 'Cancelar',
         'schedule_date' => 'Fecha de programación',
         'view_on_platform' => 'Ver en la plataforma',
+        'view_comments' => 'Ver comentarios',
         'platform_status' => 'Estado de la plataforma',
         'compliance_incomplete' => 'Algunas configuraciones de plataforma están incompletas o son incompatibles con los medios adjuntos.',
         'compliance' => [
