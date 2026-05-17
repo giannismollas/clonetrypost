@@ -6,7 +6,7 @@ export const useInboxRealtime = (workspaceId: string) => {
         `workspace.${workspaceId}.inbox`,
         '.inbox.item.received',
         () => {
-            router.reload({ only: ['threads'], preserveScroll: true });
+            router.reload({ only: ['threads', 'accounts'], preserveScroll: true });
         },
     );
 };

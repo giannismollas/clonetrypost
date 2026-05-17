@@ -6,60 +6,85 @@ namespace App\Http\Controllers\App;
 
 use App\Enums\Inbox\Kind;
 use App\Enums\Inbox\Status;
-use App\Enums\SocialAccount\Platform;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\App\InboxThreadResource;
 use App\Models\InboxThread;
+use App\Services\Inbox\InboxProviderRegistry;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class InboxController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, InboxProviderRegistry $registry): Response
     {
         $workspace = $request->user()->currentWorkspace;
 
-        $query = InboxThread::query()
-            ->where('workspace_id', $workspace->id)
-            ->orderByDesc('last_message_at');
-
-        if ($platform = $request->string('platform')->toString()) {
-            if ($enum = Platform::tryFrom($platform)) {
-                $query->where('platform', $enum);
-            }
-        }
-
-        if ($kind = $request->string('kind')->toString()) {
-            if ($enum = Kind::tryFrom($kind)) {
-                $query->where('kind', $enum);
-            }
-        }
-
-        if ($status = $request->string('status')->toString()) {
-            if ($enum = Status::tryFrom($status)) {
-                $query->where('status', $enum);
-            }
-        }
-
-        $xAccountsNeedingUpgrade = $workspace->socialAccounts()
+        $accounts = $workspace->socialAccounts()
             ->active()
-            ->where('platform', Platform::X)
             ->get()
-            ->filter(fn ($a) => $a->requiresInboxScopeUpgrade())
-            ->map(fn ($a) => ['id' => $a->id, 'username' => $a->username])
+            ->filter(fn ($account) => $registry->supports($account->platform))
             ->values();
 
+        $unreadCounts = InboxThread::query()
+            ->where('workspace_id', $workspace->id)
+            ->where('status', Status::Unread)
+            ->selectRaw('social_account_id, COUNT(*) as aggregate')
+            ->groupBy('social_account_id')
+            ->pluck('aggregate', 'social_account_id');
+
+        $requestedAccountId = $request->string('account')->toString();
+        $selectedAccount = $requestedAccountId !== ''
+            ? $accounts->firstWhere('id', $requestedAccountId)
+            : null;
+
+        if ($selectedAccount === null) {
+            $selectedAccount = $accounts->first();
+        }
+
+        $accountsResource = $accounts->map(fn ($account) => [
+            'id' => $account->id,
+            'platform' => $account->platform->value,
+            'username' => $account->username,
+            'avatar' => $account->avatar_url,
+            'unread_count' => (int) ($unreadCounts->get($account->id) ?? 0),
+            'requires_inbox_scope_upgrade' => $account->requiresInboxScopeUpgrade(),
+        ])->values();
+
+        $kindFilter = $request->string('kind')->toString();
+        $statusFilter = $request->string('status')->toString();
+
         return Inertia::render('inbox/Index', [
-            'threads' => Inertia::scroll(fn () => InboxThreadResource::collection(
-                $query->paginate(25)
-            )),
+            'accounts' => $accountsResource,
+            'selected_account_id' => $selectedAccount?->id,
+            'threads' => Inertia::scroll(function () use ($workspace, $selectedAccount, $kindFilter, $statusFilter) {
+                if ($selectedAccount === null) {
+                    return InboxThreadResource::collection(
+                        new LengthAwarePaginator([], 0, 25)
+                    );
+                }
+
+                $query = InboxThread::query()
+                    ->where('workspace_id', $workspace->id)
+                    ->where('social_account_id', $selectedAccount->id)
+                    ->orderByDesc('last_message_at');
+
+                if ($kindFilter !== '' && ($enum = Kind::tryFrom($kindFilter))) {
+                    $query->where('kind', $enum);
+                }
+
+                if ($statusFilter !== '' && ($enum = Status::tryFrom($statusFilter))) {
+                    $query->where('status', $enum);
+                }
+
+                return InboxThreadResource::collection($query->paginate(25));
+            }),
             'filters' => [
-                'platform' => $request->string('platform')->toString(),
-                'kind' => $request->string('kind')->toString(),
-                'status' => $request->string('status')->toString(),
+                'account' => $selectedAccount?->id,
+                'kind' => $kindFilter,
+                'status' => $statusFilter,
             ],
-            'x_accounts_needing_upgrade' => $xAccountsNeedingUpgrade,
         ]);
     }
 }

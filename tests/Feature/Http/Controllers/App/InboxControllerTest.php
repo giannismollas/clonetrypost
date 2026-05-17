@@ -45,7 +45,21 @@ test('inbox excludes threads from other workspaces', function () {
         ->assertInertia(fn ($page) => $page->has('threads.data', 1));
 });
 
-test('inbox filters by platform query param', function () {
+test('inbox defaults to the first account when no account query param is set', function () {
+    InboxThread::factory()->count(2)->create([
+        'workspace_id' => $this->workspace->id,
+        'social_account_id' => $this->account->id,
+        'platform' => Platform::X,
+    ]);
+
+    $this->actingAs($this->user)
+        ->get(route('app.inbox.index'))
+        ->assertInertia(fn ($page) => $page
+            ->where('selected_account_id', $this->account->id)
+            ->has('threads.data', 2));
+});
+
+test('inbox scopes threads to the account query param', function () {
     InboxThread::factory()->create([
         'workspace_id' => $this->workspace->id,
         'social_account_id' => $this->account->id,
@@ -54,17 +68,33 @@ test('inbox filters by platform query param', function () {
 
     $other = SocialAccount::factory()->create([
         'workspace_id' => $this->workspace->id,
-        'platform' => Platform::Facebook,
+        'platform' => Platform::X,
     ]);
-    InboxThread::factory()->create([
+    InboxThread::factory()->count(2)->create([
         'workspace_id' => $this->workspace->id,
         'social_account_id' => $other->id,
-        'platform' => Platform::Facebook,
+        'platform' => Platform::X,
     ]);
 
     $this->actingAs($this->user)
-        ->get(route('app.inbox.index', ['platform' => 'x']))
-        ->assertInertia(fn ($page) => $page->has('threads.data', 1));
+        ->get(route('app.inbox.index', ['account' => $other->id]))
+        ->assertInertia(fn ($page) => $page
+            ->where('selected_account_id', $other->id)
+            ->has('threads.data', 2));
+});
+
+test('inbox falls back to the first account when account query param is invalid', function () {
+    InboxThread::factory()->create([
+        'workspace_id' => $this->workspace->id,
+        'social_account_id' => $this->account->id,
+        'platform' => Platform::X,
+    ]);
+
+    $this->actingAs($this->user)
+        ->get(route('app.inbox.index', ['account' => 'non-existent-id']))
+        ->assertInertia(fn ($page) => $page
+            ->where('selected_account_id', $this->account->id)
+            ->has('threads.data', 1));
 });
 
 test('inbox filters by status', function () {
@@ -84,12 +114,12 @@ test('inbox filters by status', function () {
         ->assertInertia(fn ($page) => $page->has('threads.data', 1));
 });
 
-test('inbox exposes X accounts that still need scope upgrade', function () {
+test('inbox exposes X accounts that still need scope upgrade via accounts prop', function () {
     $this->account->update([
         'scopes' => ['tweet.read', 'tweet.write', 'users.read', 'offline.access', 'dm.read', 'dm.write', 'tweet.moderate.write'],
     ]);
 
-    SocialAccount::factory()->create([
+    $needsUpgrade = SocialAccount::factory()->create([
         'workspace_id' => $this->workspace->id,
         'platform' => Platform::X,
         'scopes' => ['tweet.read', 'tweet.write', 'users.read', 'offline.access'],
@@ -102,5 +132,31 @@ test('inbox exposes X accounts that still need scope upgrade', function () {
 
     $this->actingAs($this->user)
         ->get(route('app.inbox.index'))
-        ->assertInertia(fn ($page) => $page->has('x_accounts_needing_upgrade', 1));
+        ->assertInertia(fn ($page) => $page
+            ->has('accounts', 3)
+            ->where('accounts', fn ($accounts) => collect($accounts)
+                ->where('id', $needsUpgrade->id)
+                ->first()['requires_inbox_scope_upgrade'] === true
+            ));
+});
+
+test('inbox accounts prop includes per-account unread counts', function () {
+    InboxThread::factory()->count(2)->create([
+        'workspace_id' => $this->workspace->id,
+        'social_account_id' => $this->account->id,
+        'status' => Status::Unread,
+    ]);
+    InboxThread::factory()->create([
+        'workspace_id' => $this->workspace->id,
+        'social_account_id' => $this->account->id,
+        'status' => Status::Read,
+    ]);
+
+    $this->actingAs($this->user)
+        ->get(route('app.inbox.index'))
+        ->assertInertia(fn ($page) => $page
+            ->where('accounts', fn ($accounts) => collect($accounts)
+                ->where('id', $this->account->id)
+                ->first()['unread_count'] === 2
+            ));
 });

@@ -10,15 +10,10 @@ import {
 } from '@/components/ui/select';
 
 const props = defineProps<{
-    filters: { platform?: string; kind?: string; status?: string };
+    filters: { account?: string; kind?: string; status?: string };
 }>();
 
 const ALL = 'all';
-
-const platforms = [
-    { value: ALL, label: 'All platforms' },
-    { value: 'x', label: 'X' },
-];
 
 const kinds = [
     { value: ALL, label: 'All types' },
@@ -35,7 +30,7 @@ const statuses = [
     { value: 'archived', label: 'Archived' },
 ];
 
-const update = (key: 'platform' | 'kind' | 'status', value: string) => {
+const update = (key: 'kind' | 'status', value: string) => {
     router.get(
         inboxRoute().url,
         { ...props.filters, [key]: value === ALL ? undefined : value },
@@ -48,20 +43,6 @@ const valueFor = (current: string | undefined): string => current || ALL;
 
 <template>
     <div class="flex items-center gap-2 border-b border-border p-3" data-test="inbox-filters">
-        <Select
-            :model-value="valueFor(filters.platform)"
-            @update:model-value="(v) => update('platform', String(v))"
-        >
-            <SelectTrigger class="w-[160px]" data-test="inbox-filter-platform">
-                <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-                <SelectItem v-for="p in platforms" :key="p.value" :value="p.value">
-                    {{ p.label }}
-                </SelectItem>
-            </SelectContent>
-        </Select>
-
         <Select
             :model-value="valueFor(filters.kind)"
             @update:model-value="(v) => update('kind', String(v))"

@@ -24,6 +24,15 @@ export type InboxThread = {
     social_account_id: string;
 };
 
+export type InboxAccount = {
+    id: string;
+    platform: InboxPlatform;
+    username: string | null;
+    avatar: string | null;
+    unread_count: number;
+    requires_inbox_scope_upgrade: boolean;
+};
+
 export type InboxMessage = {
     id: string;
     direction: 'inbound' | 'outbound';
