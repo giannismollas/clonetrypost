@@ -22,6 +22,9 @@ class XController extends SocialController
         'users.read',
         'media.write',
         'offline.access',
+        'dm.read',
+        'dm.write',
+        'tweet.moderate.write',
     ];
 
     public function connect(Request $request): Response|RedirectResponse

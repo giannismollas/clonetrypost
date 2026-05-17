@@ -225,6 +225,18 @@ class SocialAccount extends Model
         ]);
     }
 
+    public function requiresInboxScopeUpgrade(): bool
+    {
+        if ($this->platform !== SocialPlatform::X) {
+            return false;
+        }
+
+        $required = ['dm.read', 'dm.write', 'tweet.moderate.write'];
+        $current = (array) ($this->scopes ?? []);
+
+        return ! empty(array_diff($required, $current));
+    }
+
     public function isDisconnected(): bool
     {
         return $this->status === Status::Disconnected || $this->status === Status::TokenExpired;
