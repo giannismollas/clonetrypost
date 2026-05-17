@@ -7,6 +7,7 @@ use App\Http\Controllers\App\ApiKeyController;
 use App\Http\Controllers\App\AssetController;
 use App\Http\Controllers\App\BillingController;
 use App\Http\Controllers\App\GiphyController;
+use App\Http\Controllers\App\InboxController;
 use App\Http\Controllers\App\NotificationController;
 use App\Http\Controllers\App\PostAiCreateController;
 use App\Http\Controllers\App\PostAiGenerateController;
@@ -117,6 +118,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('connect/mastodon', [MastodonController::class, 'connect'])->name('app.social.mastodon.connect');
     Route::post('connect/mastodon', [MastodonController::class, 'authorizeInstance'])->name('app.social.mastodon.authorize');
     Route::get('accounts/mastodon/callback', [MastodonController::class, 'callback'])->name('app.social.mastodon.callback');
+});
+
+// Inbox (auth only, no subscription/workspace pivot required)
+Route::middleware(['auth'])->group(function () {
+    Route::get('inbox', [InboxController::class, 'index'])->name('app.inbox.index');
 });
 
 // Routes that require active subscription and completed onboarding
