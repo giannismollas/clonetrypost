@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Enums\Inbox\Kind;
 use App\Enums\Inbox\MessageDirection;
+use App\Enums\Inbox\Status;
 use App\Enums\SocialAccount\Platform;
 use App\Models\ApiUsageLog;
 use App\Models\InboxMessage;
@@ -178,4 +179,72 @@ test('syncDms logs cost per request', function () {
     $log = ApiUsageLog::query()->first();
     expect($log->endpoint)->toBe('GET /2/dm_events');
     expect((float) $log->cost_usd)->toBe(0.010);
+});
+
+test('reply posts a tweet with in_reply_to_tweet_id and persists outbound message', function () {
+    $thread = InboxThread::factory()->create([
+        'social_account_id' => $this->account->id,
+        'platform' => Platform::X,
+        'kind' => Kind::Mention,
+        'external_thread_id' => 'conv-99',
+    ]);
+
+    Http::fake([
+        'api.x.com/2/tweets' => Http::response([
+            'data' => ['id' => 'reply-1', 'text' => 'thanks!'],
+        ], 201),
+    ]);
+
+    app(XInboxProvider::class)->reply($thread, 'thanks!');
+
+    Http::assertSent(fn ($req) => $req->method() === 'POST'
+        && str_contains($req->url(), '/tweets')
+        && $req['reply']['in_reply_to_tweet_id'] === 'conv-99'
+        && $req['text'] === 'thanks!');
+
+    $msg = InboxMessage::query()->where('thread_id', $thread->id)->first();
+    expect($msg->direction)->toBe(MessageDirection::Outbound);
+    expect($msg->was_sent_via_trypost)->toBeTrue();
+    expect($msg->external_message_id)->toBe('reply-1');
+
+    expect($thread->fresh()->status)->toBe(Status::Replied);
+});
+
+test('sendDm posts to dm_conversations endpoint', function () {
+    $thread = InboxThread::factory()->create([
+        'social_account_id' => $this->account->id,
+        'platform' => Platform::X,
+        'kind' => Kind::Dm,
+        'external_thread_id' => 'conv-42',
+    ]);
+
+    Http::fake([
+        'api.x.com/2/dm_conversations/conv-42/messages' => Http::response([
+            'data' => ['dm_event_id' => 'evt-1', 'dm_conversation_id' => 'conv-42'],
+        ], 201),
+    ]);
+
+    app(XInboxProvider::class)->sendDm($thread, 'reply via trypost');
+
+    Http::assertSent(fn ($req) => str_contains($req->url(), '/dm_conversations/conv-42/messages')
+        && $req['text'] === 'reply via trypost');
+
+    expect(InboxMessage::query()->where('thread_id', $thread->id)->where('author_is_us', true)->count())->toBe(1);
+});
+
+test('hideReply calls the X hidden endpoint with mention tweet id', function () {
+    $thread = InboxThread::factory()->create([
+        'social_account_id' => $this->account->id,
+        'platform' => Platform::X,
+        'kind' => Kind::Mention,
+        'external_thread_id' => 'tweet-77',
+    ]);
+
+    Http::fake(['api.x.com/2/tweets/tweet-77/hidden' => Http::response(['data' => ['hidden' => true]], 200)]);
+
+    app(XInboxProvider::class)->hideReply($thread);
+
+    Http::assertSent(fn ($req) => $req->method() === 'PUT'
+        && str_contains($req->url(), '/tweets/tweet-77/hidden')
+        && $req['hidden'] === true);
 });

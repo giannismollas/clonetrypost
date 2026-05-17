@@ -15,7 +15,6 @@ use App\Models\SocialAccount;
 use App\Services\Inbox\Concerns\TracksApiUsage;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
-use LogicException;
 
 class XInboxProvider implements InboxProvider
 {
@@ -201,17 +200,81 @@ class XInboxProvider implements InboxProvider
 
     public function reply(InboxThread $thread, string $body): void
     {
-        throw new LogicException('not implemented yet');
+        $account = $thread->socialAccount;
+
+        $response = $this->authedClient($account)->post(self::BASE_URL.'/tweets', [
+            'text' => $body,
+            'reply' => ['in_reply_to_tweet_id' => $thread->external_thread_id],
+        ]);
+
+        $this->logApiUsage($account, 'POST /2/tweets', self::COST_WRITE);
+
+        $tweetId = $response->json('data.id');
+
+        InboxMessage::query()->create([
+            'thread_id' => $thread->id,
+            'external_message_id' => $tweetId,
+            'direction' => MessageDirection::Outbound->value,
+            'author_handle' => null,
+            'author_is_us' => true,
+            'body' => $body,
+            'posted_at' => now(),
+            'fetched_at' => now(),
+            'was_sent_via_trypost' => true,
+        ]);
+
+        $thread->update([
+            'status' => Status::Replied->value,
+            'last_message_at' => now(),
+        ]);
     }
 
     public function sendDm(InboxThread $thread, string $body): void
     {
-        throw new LogicException('not implemented yet');
+        $account = $thread->socialAccount;
+
+        $response = $this->authedClient($account)->post(
+            self::BASE_URL."/dm_conversations/{$thread->external_thread_id}/messages",
+            ['text' => $body],
+        );
+
+        $this->logApiUsage($account, 'POST /2/dm_conversations/:id/messages', self::COST_WRITE);
+
+        $eventId = $response->json('data.dm_event_id');
+
+        InboxMessage::query()->create([
+            'thread_id' => $thread->id,
+            'external_message_id' => $eventId,
+            'direction' => MessageDirection::Outbound->value,
+            'author_handle' => null,
+            'author_is_us' => true,
+            'body' => $body,
+            'posted_at' => now(),
+            'fetched_at' => now(),
+            'was_sent_via_trypost' => true,
+        ]);
+
+        $thread->update([
+            'status' => Status::Replied->value,
+            'last_message_at' => now(),
+        ]);
     }
 
     public function hideReply(InboxThread $thread): void
     {
-        throw new LogicException('not implemented yet');
+        $account = $thread->socialAccount;
+
+        $this->authedClient($account)->put(
+            self::BASE_URL."/tweets/{$thread->external_thread_id}/hidden",
+            ['hidden' => true],
+        );
+
+        $this->logApiUsage($account, 'PUT /2/tweets/:id/hidden', self::COST_WRITE);
+
+        $thread->update([
+            'status' => Status::Archived->value,
+            'metadata' => array_merge($thread->metadata ?? [], ['hidden' => true]),
+        ]);
     }
 
     private function authedClient(SocialAccount $account): PendingRequest
