@@ -76,6 +76,16 @@ class SocialAccount extends Model
         return $this->hasMany(PostPlatform::class);
     }
 
+    public function inboxThreads(): HasMany
+    {
+        return $this->hasMany(InboxThread::class);
+    }
+
+    public function inboxSyncStates(): HasMany
+    {
+        return $this->hasMany(InboxSyncState::class);
+    }
+
     protected function isTokenExpired(): Attribute
     {
         return Attribute::make(

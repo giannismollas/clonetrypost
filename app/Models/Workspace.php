@@ -77,6 +77,11 @@ class Workspace extends Model
         return $this->hasMany(SocialAccount::class);
     }
 
+    public function inboxThreads(): HasMany
+    {
+        return $this->hasMany(InboxThread::class);
+    }
+
     public function posts(): HasMany
     {
         return $this->hasMany(Post::class);
