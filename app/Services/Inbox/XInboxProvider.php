@@ -54,10 +54,17 @@ class XInboxProvider implements InboxProvider
             $query['since_id'] = $syncState->last_cursor;
         }
 
-        $response = $this->authedClient($account)->get(
-            self::BASE_URL."/users/{$account->platform_user_id}/mentions",
+        $buildAndSend = fn (SocialAccount $a) => $this->authedClient($a)->get(
+            self::BASE_URL."/users/{$a->platform_user_id}/mentions",
             $query,
         );
+
+        $response = $buildAndSend($account);
+
+        if ($response->status() === 401 && $account->refresh_token) {
+            $this->refreshAccessToken($account);
+            $response = $buildAndSend($account->fresh());
+        }
 
         $this->logApiUsage($account, 'GET /2/users/:id/mentions', self::COST_POST_READ);
 
@@ -292,5 +299,26 @@ class XInboxProvider implements InboxProvider
             ->acceptJson()
             ->timeout(15)
             ->connectTimeout(5);
+    }
+
+    private function refreshAccessToken(SocialAccount $account): void
+    {
+        $response = Http::asForm()->post('https://api.x.com/2/oauth2/token', [
+            'grant_type' => 'refresh_token',
+            'refresh_token' => $account->refresh_token,
+            'client_id' => config('services.x.client_id'),
+        ]);
+
+        if ($response->failed()) {
+            throw new \RuntimeException('X token refresh failed: '.$response->body());
+        }
+
+        $account->update([
+            'access_token' => $response->json('access_token'),
+            'refresh_token' => $response->json('refresh_token') ?? $account->refresh_token,
+            'token_expires_at' => now()->addSeconds((int) $response->json('expires_in', 7200)),
+        ]);
+
+        $account->refresh();
     }
 }

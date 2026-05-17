@@ -248,3 +248,23 @@ test('hideReply calls the X hidden endpoint with mention tweet id', function () 
         && str_contains($req->url(), '/tweets/tweet-77/hidden')
         && $req['hidden'] === true);
 });
+
+test('syncMentions refreshes the token on 401 and retries once', function () {
+    Http::fakeSequence('api.x.com/2/users/12345/mentions*')
+        ->push(['error' => 'expired'], 401)
+        ->push(['data' => [], 'meta' => []], 200);
+
+    Http::fake([
+        'api.x.com/2/oauth2/token' => Http::response([
+            'access_token' => 'new-token',
+            'refresh_token' => 'new-refresh',
+            'expires_in' => 7200,
+        ], 200),
+    ]);
+
+    $this->account->update(['refresh_token' => 'old-refresh']);
+
+    app(XInboxProvider::class)->syncMentions($this->account);
+
+    expect($this->account->fresh()->access_token)->toBe('new-token');
+});
