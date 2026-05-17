@@ -15,4 +15,8 @@ return [
         'title' => 'Cuenta de :platform necesita reconectarse',
         'body' => 'La sesión de :account expiró — reconéctala para seguir publicando',
     ],
+    'inbox_item_received' => [
+        'title' => 'Tienes :kind en :platform',
+        'body' => ':handle te contactó vía tu bandeja',
+    ],
 ];

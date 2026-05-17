@@ -15,4 +15,8 @@ return [
         'title' => ':platform account needs to be reconnected',
         'body' => ':account session expired — please reconnect to keep posting',
     ],
+    'inbox_item_received' => [
+        'title' => 'You have :kind on :platform',
+        'body' => ':handle reached out via your inbox',
+    ],
 ];
