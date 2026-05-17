@@ -38,6 +38,7 @@ use App\Http\Controllers\Auth\SocialController;
 use App\Http\Controllers\Auth\ThreadsController;
 use App\Http\Controllers\Auth\TikTokController;
 use App\Http\Controllers\Auth\XController;
+use App\Http\Controllers\Auth\XScopeUpgradeController;
 use App\Http\Controllers\Auth\YouTubeController;
 use App\Http\Middleware\App\EnsureAccountReady;
 use Illuminate\Support\Facades\Route;
@@ -79,6 +80,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('connect/x', [XController::class, 'connect'])->name('app.social.x.connect');
     Route::get('accounts/x/callback', [XController::class, 'callback'])->name('app.social.x.callback');
+    Route::get('auth/x/upgrade-scopes/{account}', [XScopeUpgradeController::class, 'upgrade'])->name('auth.x.upgrade-scopes');
 
     Route::get('connect/tiktok', [TikTokController::class, 'connect'])->name('app.social.tiktok.connect');
     Route::get('accounts/tiktok/callback', [TikTokController::class, 'callback'])->name('app.social.tiktok.callback');
