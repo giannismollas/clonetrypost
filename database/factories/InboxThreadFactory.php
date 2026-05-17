@@ -24,6 +24,7 @@ class InboxThreadFactory extends Factory
         return [
             'workspace_id' => Workspace::factory(),
             'social_account_id' => SocialAccount::factory(),
+            'post_platform_id' => null,
             'platform' => Platform::X->value,
             'kind' => Kind::Mention->value,
             'external_thread_id' => (string) $this->faker->randomNumber(8),

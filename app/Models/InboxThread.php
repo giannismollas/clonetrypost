@@ -22,6 +22,7 @@ class InboxThread extends Model
     protected $fillable = [
         'workspace_id',
         'social_account_id',
+        'post_platform_id',
         'platform',
         'kind',
         'external_thread_id',
@@ -53,6 +54,11 @@ class InboxThread extends Model
     public function socialAccount(): BelongsTo
     {
         return $this->belongsTo(SocialAccount::class);
+    }
+
+    public function postPlatform(): BelongsTo
+    {
+        return $this->belongsTo(PostPlatform::class);
     }
 
     public function messages(): HasMany
