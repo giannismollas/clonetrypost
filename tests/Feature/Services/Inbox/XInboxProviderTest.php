@@ -10,6 +10,8 @@ use App\Models\ApiUsageLog;
 use App\Models\InboxMessage;
 use App\Models\InboxSyncState;
 use App\Models\InboxThread;
+use App\Models\Post;
+use App\Models\PostPlatform;
 use App\Models\SocialAccount;
 use App\Services\Inbox\XInboxProvider;
 use Illuminate\Support\Facades\Http;
@@ -247,6 +249,65 @@ test('hideReply calls the X hidden endpoint with mention tweet id', function () 
     Http::assertSent(fn ($req) => $req->method() === 'PUT'
         && str_contains($req->url(), '/tweets/tweet-77/hidden')
         && $req['hidden'] === true);
+});
+
+test('syncMentions links to post_platform_id when reply references a trypost-published post', function () {
+    $post = Post::factory()->create(['workspace_id' => $this->account->workspace_id]);
+    $platform = PostPlatform::factory()->create([
+        'post_id' => $post->id,
+        'social_account_id' => $this->account->id,
+        'platform_post_id' => 'original-tweet-id',
+    ]);
+
+    Http::fake([
+        'api.x.com/2/users/12345/mentions*' => Http::response([
+            'data' => [
+                [
+                    'id' => '999',
+                    'text' => '@you reply',
+                    'author_id' => 'a1',
+                    'conversation_id' => 'original-tweet-id',
+                    'created_at' => '2026-05-17T10:00:00Z',
+                    'referenced_tweets' => [
+                        ['type' => 'replied_to', 'id' => 'original-tweet-id'],
+                    ],
+                ],
+            ],
+            'includes' => ['users' => [['id' => 'a1', 'username' => 'alice']]],
+            'meta' => ['newest_id' => '999'],
+        ], 200),
+    ]);
+
+    app(XInboxProvider::class)->syncMentions($this->account);
+
+    $thread = InboxThread::query()->first();
+    expect($thread->post_platform_id)->toBe($platform->id);
+});
+
+test('syncMentions leaves post_platform_id null when reply is not to a trypost post', function () {
+    Http::fake([
+        'api.x.com/2/users/12345/mentions*' => Http::response([
+            'data' => [
+                [
+                    'id' => '999',
+                    'text' => '@you random',
+                    'author_id' => 'a1',
+                    'conversation_id' => 'unknown-tweet',
+                    'created_at' => '2026-05-17T10:00:00Z',
+                    'referenced_tweets' => [
+                        ['type' => 'replied_to', 'id' => 'unknown-tweet'],
+                    ],
+                ],
+            ],
+            'includes' => ['users' => [['id' => 'a1', 'username' => 'alice']]],
+            'meta' => ['newest_id' => '999'],
+        ], 200),
+    ]);
+
+    app(XInboxProvider::class)->syncMentions($this->account);
+
+    $thread = InboxThread::query()->first();
+    expect($thread->post_platform_id)->toBeNull();
 });
 
 test('syncMentions refreshes the token on 401 and retries once', function () {

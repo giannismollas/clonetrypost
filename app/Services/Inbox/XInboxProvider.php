@@ -12,6 +12,7 @@ use App\Events\Inbox\InboxItemReceived;
 use App\Models\InboxMessage;
 use App\Models\InboxSyncState;
 use App\Models\InboxThread;
+use App\Models\PostPlatform;
 use App\Models\SocialAccount;
 use App\Services\Inbox\Concerns\TracksApiUsage;
 use Illuminate\Http\Client\PendingRequest;
@@ -46,7 +47,7 @@ class XInboxProvider implements InboxProvider
         $query = [
             'expansions' => 'author_id',
             'user.fields' => 'username,profile_image_url',
-            'tweet.fields' => 'conversation_id,created_at,author_id',
+            'tweet.fields' => 'conversation_id,created_at,author_id,referenced_tweets',
             'max_results' => 50,
         ];
 
@@ -71,8 +72,34 @@ class XInboxProvider implements InboxProvider
         $data = $response->json('data') ?? [];
         $users = collect($response->json('includes.users') ?? [])->keyBy('id');
 
+        $repliedToIds = collect($data)
+            ->flatMap(fn (array $tweet): array => collect(data_get($tweet, 'referenced_tweets', []))
+                ->where('type', 'replied_to')
+                ->pluck('id')
+                ->all())
+            ->filter()
+            ->unique()
+            ->values();
+
+        $postPlatformsByTweetId = PostPlatform::query()
+            ->where('social_account_id', $account->id)
+            ->whereIn('platform_post_id', $repliedToIds)
+            ->pluck('id', 'platform_post_id');
+
         foreach ($data as $tweet) {
             $author = $users->get(data_get($tweet, 'author_id'));
+
+            $matchedPostPlatformId = null;
+            foreach (data_get($tweet, 'referenced_tweets', []) as $ref) {
+                if (data_get($ref, 'type') !== 'replied_to') {
+                    continue;
+                }
+                $refId = data_get($ref, 'id');
+                if ($refId !== null && $postPlatformsByTweetId->has($refId)) {
+                    $matchedPostPlatformId = $postPlatformsByTweetId->get($refId);
+                    break;
+                }
+            }
 
             $thread = InboxThread::query()->updateOrCreate(
                 [
@@ -83,6 +110,7 @@ class XInboxProvider implements InboxProvider
                 ],
                 [
                     'workspace_id' => $account->workspace_id,
+                    'post_platform_id' => $matchedPostPlatformId,
                     'participant_handle' => $author ? '@'.data_get($author, 'username') : null,
                     'participant_avatar' => data_get($author, 'profile_image_url'),
                     'last_message_at' => data_get($tweet, 'created_at'),
