@@ -9,6 +9,7 @@ use App\Enums\Inbox\Status;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\App\InboxThreadResource;
 use App\Models\InboxThread;
+use App\Models\PostPlatform;
 use App\Services\Inbox\InboxProviderRegistry;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -54,21 +55,31 @@ class InboxController extends Controller
 
         $kindFilter = $request->string('kind')->toString();
         $statusFilter = $request->string('status')->toString();
+        $postFilter = $request->string('post')->toString();
 
         return Inertia::render('inbox/Index', [
             'accounts' => $accountsResource,
             'selected_account_id' => $selectedAccount?->id,
-            'threads' => Inertia::scroll(function () use ($workspace, $selectedAccount, $kindFilter, $statusFilter) {
-                if ($selectedAccount === null) {
+            'threads' => Inertia::scroll(function () use ($workspace, $selectedAccount, $kindFilter, $statusFilter, $postFilter) {
+                if ($postFilter !== '') {
+                    $platformIds = PostPlatform::query()
+                        ->where('post_id', $postFilter)
+                        ->whereHas('socialAccount', fn ($q) => $q->where('workspace_id', $workspace->id))
+                        ->pluck('id');
+
+                    $query = InboxThread::query()
+                        ->whereIn('post_platform_id', $platformIds)
+                        ->orderByDesc('last_message_at');
+                } elseif ($selectedAccount === null) {
                     return InboxThreadResource::collection(
                         new LengthAwarePaginator([], 0, 25)
                     );
+                } else {
+                    $query = InboxThread::query()
+                        ->where('workspace_id', $workspace->id)
+                        ->where('social_account_id', $selectedAccount->id)
+                        ->orderByDesc('last_message_at');
                 }
-
-                $query = InboxThread::query()
-                    ->where('workspace_id', $workspace->id)
-                    ->where('social_account_id', $selectedAccount->id)
-                    ->orderByDesc('last_message_at');
 
                 if ($kindFilter !== '' && ($enum = Kind::tryFrom($kindFilter))) {
                     $query->where('kind', $enum);
@@ -84,6 +95,7 @@ class InboxController extends Controller
                 'account' => $selectedAccount?->id,
                 'kind' => $kindFilter,
                 'status' => $statusFilter,
+                'post' => $postFilter,
             ],
         ]);
     }

@@ -5,6 +5,8 @@ declare(strict_types=1);
 use App\Enums\Inbox\Status;
 use App\Enums\SocialAccount\Platform;
 use App\Models\InboxThread;
+use App\Models\Post;
+use App\Models\PostPlatform;
 use App\Models\SocialAccount;
 use App\Models\User;
 use App\Models\Workspace;
@@ -138,6 +140,29 @@ test('inbox exposes X accounts that still need scope upgrade via accounts prop',
                 ->where('id', $needsUpgrade->id)
                 ->first()['requires_inbox_scope_upgrade'] === true
             ));
+});
+
+test('inbox scopes threads to a specific post when ?post= is set', function () {
+    $post = Post::factory()->create(['workspace_id' => $this->workspace->id]);
+    $platform = PostPlatform::factory()->create([
+        'post_id' => $post->id,
+        'social_account_id' => $this->account->id,
+    ]);
+
+    InboxThread::factory()->create([
+        'workspace_id' => $this->workspace->id,
+        'social_account_id' => $this->account->id,
+        'post_platform_id' => $platform->id,
+    ]);
+    InboxThread::factory()->create([
+        'workspace_id' => $this->workspace->id,
+        'social_account_id' => $this->account->id,
+        'post_platform_id' => null,
+    ]);
+
+    $this->actingAs($this->user)
+        ->get(route('app.inbox.index', ['post' => $post->id]))
+        ->assertInertia(fn ($page) => $page->has('threads.data', 1));
 });
 
 test('inbox accounts prop includes per-account unread counts', function () {
