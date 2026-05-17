@@ -43,6 +43,7 @@ class InboxController extends Controller
         }
 
         $xAccountsNeedingUpgrade = $workspace->socialAccounts()
+            ->active()
             ->where('platform', Platform::X)
             ->get()
             ->filter(fn ($a) => $a->requiresInboxScopeUpgrade())

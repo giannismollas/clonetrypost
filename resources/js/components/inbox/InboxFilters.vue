@@ -1,25 +1,34 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
 import { index as inboxRoute } from '@/routes/app/inbox';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 const props = defineProps<{
     filters: { platform?: string; kind?: string; status?: string };
 }>();
 
+const ALL = 'all';
+
 const platforms = [
-    { value: '', label: 'All platforms' },
+    { value: ALL, label: 'All platforms' },
     { value: 'x', label: 'X' },
 ];
 
 const kinds = [
-    { value: '', label: 'All types' },
+    { value: ALL, label: 'All types' },
     { value: 'comment', label: 'Comments' },
     { value: 'dm', label: 'DMs' },
     { value: 'mention', label: 'Mentions' },
 ];
 
 const statuses = [
-    { value: '', label: 'All' },
+    { value: ALL, label: 'All' },
     { value: 'unread', label: 'Unread' },
     { value: 'read', label: 'Read' },
     { value: 'replied', label: 'Replied' },
@@ -29,37 +38,56 @@ const statuses = [
 const update = (key: 'platform' | 'kind' | 'status', value: string) => {
     router.get(
         inboxRoute().url,
-        { ...props.filters, [key]: value || undefined },
+        { ...props.filters, [key]: value === ALL ? undefined : value },
         { preserveState: true, replace: true, preserveScroll: true },
     );
 };
+
+const valueFor = (current: string | undefined): string => current || ALL;
 </script>
 
 <template>
-    <div class="flex items-center gap-2 p-3 border-b border-border" data-test="inbox-filters">
-        <select
-            :value="filters.platform ?? ''"
-            class="text-sm rounded-md border border-border bg-background px-2 py-1"
-            data-test="inbox-filter-platform"
-            @change="update('platform', ($event.target as HTMLSelectElement).value)"
+    <div class="flex items-center gap-2 border-b border-border p-3" data-test="inbox-filters">
+        <Select
+            :model-value="valueFor(filters.platform)"
+            @update:model-value="(v) => update('platform', String(v))"
         >
-            <option v-for="p in platforms" :key="p.value" :value="p.value">{{ p.label }}</option>
-        </select>
-        <select
-            :value="filters.kind ?? ''"
-            class="text-sm rounded-md border border-border bg-background px-2 py-1"
-            data-test="inbox-filter-kind"
-            @change="update('kind', ($event.target as HTMLSelectElement).value)"
+            <SelectTrigger class="w-[160px]" data-test="inbox-filter-platform">
+                <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem v-for="p in platforms" :key="p.value" :value="p.value">
+                    {{ p.label }}
+                </SelectItem>
+            </SelectContent>
+        </Select>
+
+        <Select
+            :model-value="valueFor(filters.kind)"
+            @update:model-value="(v) => update('kind', String(v))"
         >
-            <option v-for="k in kinds" :key="k.value" :value="k.value">{{ k.label }}</option>
-        </select>
-        <select
-            :value="filters.status ?? ''"
-            class="text-sm rounded-md border border-border bg-background px-2 py-1"
-            data-test="inbox-filter-status"
-            @change="update('status', ($event.target as HTMLSelectElement).value)"
+            <SelectTrigger class="w-[140px]" data-test="inbox-filter-kind">
+                <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem v-for="k in kinds" :key="k.value" :value="k.value">
+                    {{ k.label }}
+                </SelectItem>
+            </SelectContent>
+        </Select>
+
+        <Select
+            :model-value="valueFor(filters.status)"
+            @update:model-value="(v) => update('status', String(v))"
         >
-            <option v-for="s in statuses" :key="s.value" :value="s.value">{{ s.label }}</option>
-        </select>
+            <SelectTrigger class="w-[120px]" data-test="inbox-filter-status">
+                <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem v-for="s in statuses" :key="s.value" :value="s.value">
+                    {{ s.label }}
+                </SelectItem>
+            </SelectContent>
+        </Select>
     </div>
 </template>

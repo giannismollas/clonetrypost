@@ -10,11 +10,13 @@ import ThreadList from '@/components/inbox/ThreadList.vue';
 import XReauthBanner from '@/components/inbox/XReauthBanner.vue';
 import { useInboxRealtime } from '@/composables/useInboxRealtime';
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
     threads: { data: InboxThread[]; meta?: unknown };
     filters: { platform?: string; kind?: string; status?: string };
-    x_accounts_needing_upgrade: Array<{ id: string; username: string }>;
-}>();
+    x_accounts_needing_upgrade?: Array<{ id: string; username: string }>;
+}>(), {
+    x_accounts_needing_upgrade: () => [],
+});
 
 const page = usePage();
 const workspaceId = computed(() => (page.props.auth as Auth | undefined)?.currentWorkspace?.id ?? '');
