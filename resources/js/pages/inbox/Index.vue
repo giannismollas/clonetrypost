@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { usePage } from '@inertiajs/vue3';
+import { Head, usePage } from '@inertiajs/vue3';
 import type { Auth } from '@/types';
 import type { InboxThread } from '@/types/inbox';
+import AppLayout from '@/layouts/AppLayout.vue';
 import InboxFilters from '@/components/inbox/InboxFilters.vue';
 import ThreadDetail from '@/components/inbox/ThreadDetail.vue';
 import ThreadList from '@/components/inbox/ThreadList.vue';
@@ -26,18 +27,23 @@ const selected = ref<InboxThread | null>(null);
 </script>
 
 <template>
-    <div>
-        <XReauthBanner :accounts="props.x_accounts_needing_upgrade" />
-        <div class="h-screen grid grid-cols-[360px_1fr]" data-test="inbox-page">
-            <div class="border-r border-zinc-200 dark:border-zinc-800 flex flex-col">
-                <InboxFilters :filters="filters" />
-                <ThreadList
-                    :threads="threads.data"
-                    :selected-id="selected?.id ?? null"
-                    @select="selected = $event"
-                />
+    <Head title="Inbox" />
+
+    <AppLayout full-width>
+        <div class="flex h-full flex-1 flex-col" data-test="inbox-page">
+            <XReauthBanner :accounts="props.x_accounts_needing_upgrade" />
+
+            <div class="grid flex-1 grid-cols-[360px_1fr] overflow-hidden">
+                <div class="flex flex-col border-r border-border">
+                    <InboxFilters :filters="filters" />
+                    <ThreadList
+                        :threads="threads.data"
+                        :selected-id="selected?.id ?? null"
+                        @select="selected = $event"
+                    />
+                </div>
+                <ThreadDetail :thread="selected" />
             </div>
-            <ThreadDetail :thread="selected" />
         </div>
-    </div>
+    </AppLayout>
 </template>
