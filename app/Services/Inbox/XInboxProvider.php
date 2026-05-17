@@ -8,6 +8,7 @@ use App\Enums\Inbox\Kind;
 use App\Enums\Inbox\MessageDirection;
 use App\Enums\Inbox\Status;
 use App\Enums\SocialAccount\Platform;
+use App\Events\Inbox\InboxItemReceived;
 use App\Models\InboxMessage;
 use App\Models\InboxSyncState;
 use App\Models\InboxThread;
@@ -96,6 +97,10 @@ class XInboxProvider implements InboxProvider
                     'was_sent_via_trypost' => false,
                 ],
             );
+
+            if ($thread->wasRecentlyCreated) {
+                InboxItemReceived::dispatch($thread);
+            }
         }
 
         $newestId = $response->json('meta.newest_id');
@@ -180,6 +185,10 @@ class XInboxProvider implements InboxProvider
                     'was_sent_via_trypost' => false,
                 ],
             );
+
+            if ($thread->wasRecentlyCreated && ! $isUs) {
+                InboxItemReceived::dispatch($thread);
+            }
 
             $newestSeen = data_get($event, 'id');
         }
