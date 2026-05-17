@@ -12,3 +12,7 @@ Schedule::command(ProcessScheduledPosts::class)->everyMinute()->withoutOverlappi
 Schedule::command(CheckSocialConnections::class)->daily()->withoutOverlapping()->onOneServer();
 Schedule::command(RefreshExpiringTokens::class)->hourly()->withoutOverlapping()->onOneServer();
 Schedule::command(RecoverStuckPosts::class)->everyThirtyMinutes()->withoutOverlapping()->onOneServer();
+Schedule::command('inbox:sync')
+    ->everyTenMinutes()
+    ->withoutOverlapping()
+    ->onOneServer();
