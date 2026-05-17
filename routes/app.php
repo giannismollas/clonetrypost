@@ -8,6 +8,7 @@ use App\Http\Controllers\App\AssetController;
 use App\Http\Controllers\App\BillingController;
 use App\Http\Controllers\App\GiphyController;
 use App\Http\Controllers\App\InboxController;
+use App\Http\Controllers\App\InboxThreadController;
 use App\Http\Controllers\App\NotificationController;
 use App\Http\Controllers\App\PostAiCreateController;
 use App\Http\Controllers\App\PostAiGenerateController;
@@ -123,6 +124,10 @@ Route::middleware(['auth'])->group(function () {
 // Inbox (auth only, no subscription/workspace pivot required)
 Route::middleware(['auth'])->group(function () {
     Route::get('inbox', [InboxController::class, 'index'])->name('app.inbox.index');
+    Route::get('inbox/threads/{thread}', [InboxThreadController::class, 'show'])->name('app.inbox.threads.show');
+    Route::post('inbox/threads/{thread}/reply', [InboxThreadController::class, 'reply'])->name('app.inbox.threads.reply');
+    Route::post('inbox/threads/{thread}/hide', [InboxThreadController::class, 'hide'])->name('app.inbox.threads.hide');
+    Route::patch('inbox/threads/{thread}', [InboxThreadController::class, 'update'])->name('app.inbox.threads.update');
 });
 
 // Routes that require active subscription and completed onboarding
