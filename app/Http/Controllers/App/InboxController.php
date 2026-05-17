@@ -42,6 +42,13 @@ class InboxController extends Controller
             }
         }
 
+        $xAccountsNeedingUpgrade = $workspace->socialAccounts()
+            ->where('platform', Platform::X)
+            ->get()
+            ->filter(fn ($a) => $a->requiresInboxScopeUpgrade())
+            ->map(fn ($a) => ['id' => $a->id, 'username' => $a->username])
+            ->values();
+
         return Inertia::render('inbox/Index', [
             'threads' => Inertia::scroll(fn () => InboxThreadResource::collection(
                 $query->paginate(25)
@@ -51,6 +58,7 @@ class InboxController extends Controller
                 'kind' => $request->string('kind')->toString(),
                 'status' => $request->string('status')->toString(),
             ],
+            'x_accounts_needing_upgrade' => $xAccountsNeedingUpgrade,
         ]);
     }
 }

@@ -83,3 +83,24 @@ test('inbox filters by status', function () {
         ->get(route('app.inbox.index', ['status' => 'unread']))
         ->assertInertia(fn ($page) => $page->has('threads.data', 1));
 });
+
+test('inbox exposes X accounts that still need scope upgrade', function () {
+    $this->account->update([
+        'scopes' => ['tweet.read', 'tweet.write', 'users.read', 'offline.access', 'dm.read', 'dm.write', 'tweet.moderate.write'],
+    ]);
+
+    SocialAccount::factory()->create([
+        'workspace_id' => $this->workspace->id,
+        'platform' => Platform::X,
+        'scopes' => ['tweet.read', 'tweet.write', 'users.read', 'offline.access'],
+    ]);
+    SocialAccount::factory()->create([
+        'workspace_id' => $this->workspace->id,
+        'platform' => Platform::X,
+        'scopes' => ['tweet.read', 'tweet.write', 'users.read', 'offline.access', 'dm.read', 'dm.write', 'tweet.moderate.write'],
+    ]);
+
+    $this->actingAs($this->user)
+        ->get(route('app.inbox.index'))
+        ->assertInertia(fn ($page) => $page->has('x_accounts_needing_upgrade', 1));
+});
