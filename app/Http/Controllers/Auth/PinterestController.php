@@ -60,13 +60,6 @@ class PinterestController extends SocialController
         try {
             $socialUser = Socialite::driver($this->driver)->user();
 
-            Log::info('Pinterest OAuth User Data', [
-                'id' => $socialUser->getId(),
-                'nickname' => $socialUser->getNickname(),
-                'name' => $socialUser->getName(),
-                'user' => $socialUser->user ?? [],
-            ]);
-
             $avatarPath = uploadFromUrl($socialUser->getAvatar());
 
             // Create new account
@@ -79,7 +72,8 @@ class PinterestController extends SocialController
                 'access_token' => $socialUser->token,
                 'refresh_token' => $socialUser->refreshToken,
                 'token_expires_at' => $socialUser->expiresIn ? now()->addSeconds($socialUser->expiresIn) : now()->addDays(30),
-                'scopes' => $socialUser->approvedScopes ?? $this->scopes,
+                // Pinterest returns scopes space-joined but Socialite doesn't split them, so re-split here.
+                'scopes' => explode(' ', implode(' ', $socialUser->approvedScopes)),
                 'status' => Status::Connected,
             ]);
 

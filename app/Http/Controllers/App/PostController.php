@@ -57,12 +57,24 @@ class PostController extends Controller
             $query->where('content', 'ilike', "%{$search}%");
         }
 
+        $labelIds = $request->collect('labels')
+            ->filter(fn ($id) => is_string($id) && $id !== '')
+            ->values()
+            ->all();
+
+        $query->when($labelIds, fn ($q) => $q->whereHas(
+            'labels',
+            fn ($q) => $q->whereIn('workspace_labels.id', $labelIds),
+        ));
+
         return Inertia::render('posts/Index', [
             'workspace' => $workspace,
             'posts' => Inertia::scroll(fn () => $query->latest('scheduled_at')->paginate(config('app.pagination.default'))),
             'currentStatus' => $status,
+            'labels' => $workspace->labels()->orderBy('name')->get(['id', 'name', 'color']),
             'filters' => [
                 'search' => $request->input('search', ''),
+                'labels' => $labelIds,
             ],
         ]);
     }
@@ -222,15 +234,15 @@ class PostController extends Controller
             $account->id => new PlatformConfigResource($account),
         ]);
 
-        $pinterestBoards = [];
-        $pinterestAccount = $socialAccounts->firstWhere('platform', Platform::Pinterest);
-        if ($pinterestAccount) {
-            try {
-                $pinterestBoards = app(PinterestPublisher::class)->getBoards($pinterestAccount);
-            } catch (\Exception $e) {
-                // Silently fail - boards will be empty
-            }
-        }
+        $pinterestBoards = $socialAccounts
+            ->where('platform', Platform::Pinterest)
+            ->mapWithKeys(fn ($account) => [
+                $account->id => rescue(
+                    fn () => app(PinterestPublisher::class)->getBoards($account),
+                    [],
+                    report: false,
+                ),
+            ]);
 
         $tiktokCreatorInfos = $socialAccounts
             ->where('platform', Platform::TikTok)
@@ -278,9 +290,6 @@ class PostController extends Controller
         }
 
         if ($action === PostAction::Publishing) {
-            session()->flash('flash.banner', __('posts.flash.publishing'));
-            session()->flash('flash.bannerStyle', 'success');
-
             return redirect()->route('app.posts.show', $post);
         }
 

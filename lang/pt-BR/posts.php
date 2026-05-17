@@ -9,6 +9,10 @@ return [
     'no_search_results' => 'Nenhum post corresponde à sua busca',
     'try_different_search' => 'Tente outra palavra-chave ou limpe a busca.',
     'start_creating' => 'Comece criando seu primeiro post.',
+    'filter_by_label' => 'Filtrar por label',
+    'label_search_placeholder' => 'Buscar labels...',
+    'no_labels' => 'Nenhuma label encontrada.',
+    'clear_label_filter' => 'Limpar filtro de labels',
     'table' => [
         'post' => 'Post',
         'status' => 'Status',
@@ -143,6 +147,12 @@ return [
                 'video_pin' => 'Video Pin',
                 'carousel' => 'Carrossel',
             ],
+            'board' => 'Quadro',
+            'select_board' => 'Selecione um quadro',
+            'no_boards' => 'Nenhum quadro do Pinterest encontrado. Crie um na sua conta do Pinterest primeiro.',
+            'search_board' => 'Pesquisar quadros...',
+            'no_board_found' => 'Nenhum quadro encontrado.',
+            'board_required' => 'Selecione um quadro do Pinterest para publicar este post.',
         ],
         'warnings' => [
             'no_variant' => 'Escolha um tipo de publicação para continuar.',
@@ -461,7 +471,6 @@ return [
 
     'flash' => [
         'scheduled' => 'Post agendado com sucesso!',
-        'publishing' => 'Post está sendo publicado! Pode levar alguns minutos para processar e aparecer em cada plataforma.',
         'deleted' => 'Post excluído com sucesso!',
         'duplicated' => 'Post duplicado como rascunho.',
         'cannot_edit_published' => 'Posts publicados não podem ser editados.',

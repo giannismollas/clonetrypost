@@ -9,6 +9,10 @@ return [
     'no_search_results' => 'No posts match your search',
     'try_different_search' => 'Try a different keyword or clear the search.',
     'start_creating' => 'Start by creating your first post.',
+    'filter_by_label' => 'Filter by label',
+    'label_search_placeholder' => 'Search labels...',
+    'no_labels' => 'No labels found.',
+    'clear_label_filter' => 'Clear label filter',
     'table' => [
         'post' => 'Post',
         'status' => 'Status',
@@ -143,6 +147,12 @@ return [
                 'video_pin' => 'Video Pin',
                 'carousel' => 'Carousel',
             ],
+            'board' => 'Board',
+            'select_board' => 'Select a board',
+            'no_boards' => 'No Pinterest boards found. Create one in your Pinterest account first.',
+            'search_board' => 'Search boards...',
+            'no_board_found' => 'No board matches your search.',
+            'board_required' => 'Select a Pinterest board to publish this post.',
         ],
         'warnings' => [
             'no_variant' => 'Pick a post type to continue.',
@@ -461,7 +471,6 @@ return [
 
     'flash' => [
         'scheduled' => 'Post scheduled successfully!',
-        'publishing' => 'Post is being published! It may take a few minutes to process and appear on each platform.',
         'deleted' => 'Post deleted successfully!',
         'duplicated' => 'Post duplicated as a draft.',
         'cannot_edit_published' => 'Published posts cannot be edited.',
