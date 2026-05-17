@@ -114,3 +114,68 @@ test('syncMentions logs cost per request', function () {
     expect(ApiUsageLog::query()->count())->toBe(1);
     expect((float) ApiUsageLog::query()->first()->cost_usd)->toBe(0.005);
 });
+
+test('syncDms creates threads + messages for incoming DMs', function () {
+    Http::fake([
+        'api.x.com/2/dm_events*' => Http::response([
+            'data' => [
+                [
+                    'id' => 'm1',
+                    'event_type' => 'MessageCreate',
+                    'dm_conversation_id' => 'conv-1',
+                    'sender_id' => 'a1',
+                    'text' => 'hi there',
+                    'created_at' => '2026-05-17T10:00:00Z',
+                ],
+            ],
+            'includes' => [
+                'users' => [['id' => 'a1', 'username' => 'alice', 'profile_image_url' => 'https://x.com/a.jpg']],
+            ],
+            'meta' => ['newest_id' => 'm1'],
+        ], 200),
+    ]);
+
+    $count = app(XInboxProvider::class)->syncDms($this->account);
+
+    expect($count)->toBe(1);
+
+    $thread = InboxThread::query()->first();
+    expect($thread->kind)->toBe(Kind::Dm);
+    expect($thread->external_thread_id)->toBe('conv-1');
+    expect($thread->participant_handle)->toBe('@alice');
+});
+
+test('syncDms marks outbound messages (sent by us) with author_is_us = true', function () {
+    Http::fake([
+        'api.x.com/2/dm_events*' => Http::response([
+            'data' => [
+                [
+                    'id' => 'm2',
+                    'event_type' => 'MessageCreate',
+                    'dm_conversation_id' => 'conv-2',
+                    'sender_id' => '12345',
+                    'text' => 'I replied',
+                    'created_at' => '2026-05-17T10:00:00Z',
+                ],
+            ],
+            'includes' => ['users' => [['id' => '12345', 'username' => 'me']]],
+            'meta' => ['newest_id' => 'm2'],
+        ], 200),
+    ]);
+
+    app(XInboxProvider::class)->syncDms($this->account);
+
+    $message = InboxMessage::query()->first();
+    expect($message->direction)->toBe(MessageDirection::Outbound);
+    expect($message->author_is_us)->toBeTrue();
+});
+
+test('syncDms logs cost per request', function () {
+    Http::fake(['api.x.com/2/dm_events*' => Http::response(['data' => [], 'meta' => []], 200)]);
+
+    app(XInboxProvider::class)->syncDms($this->account);
+
+    $log = ApiUsageLog::query()->first();
+    expect($log->endpoint)->toBe('GET /2/dm_events');
+    expect((float) $log->cost_usd)->toBe(0.010);
+});

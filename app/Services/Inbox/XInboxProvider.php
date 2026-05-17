@@ -116,7 +116,87 @@ class XInboxProvider implements InboxProvider
 
     public function syncDms(SocialAccount $account): int
     {
-        throw new LogicException('not implemented yet');
+        $syncState = $account->inboxSyncStates()
+            ->where('platform', Platform::X->value)
+            ->where('kind', Kind::Dm->value)
+            ->first();
+
+        $query = [
+            'event_types' => 'MessageCreate',
+            'expansions' => 'sender_id',
+            'user.fields' => 'username,profile_image_url',
+            'dm_event.fields' => 'sender_id,text,created_at,dm_conversation_id',
+            'max_results' => 50,
+        ];
+
+        if ($syncState?->last_cursor) {
+            $query['pagination_token'] = $syncState->last_cursor;
+        }
+
+        $response = $this->authedClient($account)->get(self::BASE_URL.'/dm_events', $query);
+
+        $this->logApiUsage($account, 'GET /2/dm_events', self::COST_DM_READ);
+
+        $data = $response->json('data') ?? [];
+        $users = collect($response->json('includes.users') ?? [])->keyBy('id');
+
+        $newestSeen = $syncState?->last_cursor;
+
+        foreach ($data as $event) {
+            if (data_get($event, 'event_type') !== 'MessageCreate') {
+                continue;
+            }
+
+            $senderId = data_get($event, 'sender_id');
+            $sender = $users->get($senderId);
+            $isUs = $senderId === $account->platform_user_id;
+
+            $thread = InboxThread::query()->updateOrCreate(
+                [
+                    'social_account_id' => $account->id,
+                    'platform' => Platform::X->value,
+                    'kind' => Kind::Dm->value,
+                    'external_thread_id' => data_get($event, 'dm_conversation_id'),
+                ],
+                [
+                    'workspace_id' => $account->workspace_id,
+                    'participant_handle' => $isUs ? null : ($sender ? '@'.data_get($sender, 'username') : null),
+                    'participant_avatar' => $isUs ? null : data_get($sender, 'profile_image_url'),
+                    'last_message_at' => data_get($event, 'created_at'),
+                    'last_user_message_at' => $isUs ? null : data_get($event, 'created_at'),
+                    'status' => $isUs ? Status::Read->value : Status::Unread->value,
+                    'metadata' => ['dm_conversation_id' => data_get($event, 'dm_conversation_id')],
+                ],
+            );
+
+            InboxMessage::query()->updateOrCreate(
+                ['thread_id' => $thread->id, 'external_message_id' => data_get($event, 'id')],
+                [
+                    'direction' => $isUs ? MessageDirection::Outbound->value : MessageDirection::Inbound->value,
+                    'author_handle' => $sender ? '@'.data_get($sender, 'username') : null,
+                    'author_is_us' => $isUs,
+                    'body' => data_get($event, 'text'),
+                    'posted_at' => data_get($event, 'created_at'),
+                    'fetched_at' => now(),
+                    'was_sent_via_trypost' => false,
+                ],
+            );
+
+            $newestSeen = data_get($event, 'id');
+        }
+
+        if ($newestSeen) {
+            InboxSyncState::query()->updateOrCreate(
+                [
+                    'social_account_id' => $account->id,
+                    'platform' => Platform::X->value,
+                    'kind' => Kind::Dm->value,
+                ],
+                ['last_synced_at' => now(), 'last_cursor' => $newestSeen, 'last_error' => null],
+            );
+        }
+
+        return count($data);
     }
 
     public function reply(InboxThread $thread, string $body): void
