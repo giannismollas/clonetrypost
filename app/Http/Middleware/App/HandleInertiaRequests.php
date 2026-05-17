@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware\App;
 
+use App\Enums\Inbox\Status as InboxStatus;
 use App\Http\Resources\App\HandleInertiaRequests\AuthAccountResource;
 use App\Http\Resources\App\HandleInertiaRequests\AuthPlanResource;
 use App\Http\Resources\App\HandleInertiaRequests\AuthUserResource;
@@ -44,6 +45,11 @@ class HandleInertiaRequests extends Middleware
                 'account' => $account ? AuthAccountResource::make($account) : null,
                 'plan' => $account && $account->plan ? AuthPlanResource::make($account, $account->plan) : null,
                 'hasActiveSubscription' => $account ? $account->hasActiveSubscription() : false,
+            ],
+            'inbox' => fn () => [
+                'unread_count' => $currentWorkspace
+                    ? $currentWorkspace->inboxThreads()->where('status', InboxStatus::Unread)->count()
+                    : 0,
             ],
             'usage' => $account && ! $isSelfHosted ? $account->usage() : null,
             'features' => $account && ! $isSelfHosted ? $account->featureLimits() : null,

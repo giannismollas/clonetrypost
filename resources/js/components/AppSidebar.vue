@@ -9,6 +9,7 @@ import {
     IconFileCheck,
     IconFileText,
     IconHash,
+    IconInbox,
     IconPhoto,
     IconPencil,
     IconPlus,
@@ -45,6 +46,7 @@ import { useFeatureAccess } from '@/composables/useFeatureAccess';
 import { useUpgradeDialog } from '@/composables/useUpgradeDialog';
 import { accounts, analytics, calendar, settings as settingsHub } from '@/routes/app';
 import { index as assets } from '@/routes/app/assets';
+import { index as inboxIndex } from '@/routes/app/inbox';
 import { index as labels } from '@/routes/app/labels';
 import { index as signatures } from '@/routes/app/signatures';
 import { create as createWorkspaceRoute, switchMethod } from '@/routes/app/workspaces';
@@ -59,12 +61,22 @@ interface Workspace {
 const page = usePage();
 const currentWorkspace = computed<Workspace | null>(() => page.props.auth.currentWorkspace as Workspace | null);
 const workspaces = computed<Workspace[]>(() => page.props.auth.workspaces as Workspace[]);
+const inboxUnreadCount = computed<number>(
+    () => (page.props.inbox as { unread_count?: number } | undefined)?.unread_count ?? 0,
+);
 
 const mainNavItems = computed<NavItem[]>(() => [
     {
         title: trans('sidebar.posts.calendar'),
         href: calendar.url(),
         icon: IconCalendar,
+    },
+    {
+        title: trans('sidebar.inbox'),
+        href: inboxIndex.url(),
+        icon: IconInbox,
+        badge: inboxUnreadCount.value,
+        badgeDuskSelector: 'sidebar-inbox-unread',
     },
     {
         title: trans('sidebar.analytics'),

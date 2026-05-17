@@ -58,6 +58,8 @@ export interface NavItem {
     activePattern?: string;
     exact?: boolean;
     excludeActive?: string[];
+    badge?: number;
+    badgeDuskSelector?: string;
 }
 
 export interface SharedData {

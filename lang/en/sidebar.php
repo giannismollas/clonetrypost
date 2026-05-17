@@ -26,6 +26,7 @@ return [
     ],
 
     'analytics' => 'Analytics',
+    'inbox' => 'Inbox',
     'settings' => 'Settings',
 
     'posts' => [
