@@ -36,10 +36,10 @@ const update = (key: 'platform' | 'kind' | 'status', value: string) => {
 </script>
 
 <template>
-    <div class="flex items-center gap-2 p-3 border-b border-zinc-200 dark:border-zinc-800" data-test="inbox-filters">
+    <div class="flex items-center gap-2 p-3 border-b border-border" data-test="inbox-filters">
         <select
             :value="filters.platform ?? ''"
-            class="text-sm rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-2 py-1"
+            class="text-sm rounded-md border border-border bg-background px-2 py-1"
             data-test="inbox-filter-platform"
             @change="update('platform', ($event.target as HTMLSelectElement).value)"
         >
@@ -47,7 +47,7 @@ const update = (key: 'platform' | 'kind' | 'status', value: string) => {
         </select>
         <select
             :value="filters.kind ?? ''"
-            class="text-sm rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-2 py-1"
+            class="text-sm rounded-md border border-border bg-background px-2 py-1"
             data-test="inbox-filter-kind"
             @change="update('kind', ($event.target as HTMLSelectElement).value)"
         >
@@ -55,7 +55,7 @@ const update = (key: 'platform' | 'kind' | 'status', value: string) => {
         </select>
         <select
             :value="filters.status ?? ''"
-            class="text-sm rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-2 py-1"
+            class="text-sm rounded-md border border-border bg-background px-2 py-1"
             data-test="inbox-filter-status"
             @change="update('status', ($event.target as HTMLSelectElement).value)"
         >

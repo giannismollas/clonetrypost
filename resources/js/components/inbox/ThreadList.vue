@@ -21,7 +21,7 @@ const emit = defineEmits<{
             :selected="thread.id === selectedId"
             @select="emit('select', $event)"
         />
-        <div v-if="threads.length === 0" class="p-6 text-center text-sm text-zinc-500">
+        <div v-if="threads.length === 0" class="p-6 text-center text-sm text-muted-foreground">
             No conversations yet.
         </div>
     </div>

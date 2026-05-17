@@ -19,15 +19,15 @@ defineProps<{
             :class="[
                 'max-w-[70%] rounded-2xl px-4 py-2',
                 message.author_is_us
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100',
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-foreground',
             ]"
         >
             <div class="whitespace-pre-wrap">{{ message.body }}</div>
             <div
                 :class="[
                     'text-xs mt-1',
-                    message.author_is_us ? 'text-blue-100' : 'text-zinc-500',
+                    message.author_is_us ? 'text-primary-foreground/70' : 'text-muted-foreground',
                 ]"
             >
                 {{ message.posted_at ? date.formatDateTime(message.posted_at) : '' }}

@@ -32,8 +32,8 @@ const kindIcon = computed(() => {
     <button
         type="button"
         :class="[
-            'w-full text-left p-3 border-b border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors',
-            selected && 'bg-zinc-100 dark:bg-zinc-900',
+            'w-full text-left p-3 border-b border-border hover:bg-accent transition-colors',
+            selected && 'bg-muted',
             thread.status === 'unread' && 'font-semibold',
         ]"
         :data-test="`inbox-thread-${thread.id}`"
@@ -46,13 +46,13 @@ const kindIcon = computed(() => {
                 :alt="thread.participant_handle ?? ''"
                 class="size-10 rounded-full shrink-0"
             />
-            <div v-else class="size-10 rounded-full bg-zinc-200 dark:bg-zinc-800 shrink-0" />
+            <div v-else class="size-10 rounded-full bg-muted shrink-0" />
             <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2">
                     <span class="truncate">{{ thread.participant_handle ?? '—' }}</span>
-                    <component :is="kindIcon" class="size-3.5 text-zinc-500 shrink-0" />
+                    <component :is="kindIcon" class="size-3.5 text-muted-foreground shrink-0" />
                 </div>
-                <div class="text-xs text-zinc-500 mt-1 flex items-center gap-2">
+                <div class="text-xs text-muted-foreground mt-1 flex items-center gap-2">
                     <component :is="platformIcon" class="size-3.5" />
                     <span>{{ thread.last_message_at ? date.diffForHumans(thread.last_message_at) : '' }}</span>
                 </div>

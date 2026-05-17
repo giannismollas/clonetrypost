@@ -35,16 +35,16 @@ onMounted(load);
 
 <template>
     <div v-if="thread" class="flex flex-col h-full" data-test="inbox-thread-detail">
-        <div class="p-3 border-b border-zinc-200 dark:border-zinc-800">
+        <div class="p-3 border-b border-border">
             <div class="font-semibold">{{ thread.participant_handle ?? '—' }}</div>
         </div>
         <div class="flex-1 overflow-y-auto p-4 space-y-3" data-test="inbox-thread-messages">
             <MessageBubble v-for="msg in messages" :key="msg.id" :message="msg" />
-            <div v-if="loading" class="text-center text-sm text-zinc-500">Loading…</div>
+            <div v-if="loading" class="text-center text-sm text-muted-foreground">Loading…</div>
         </div>
         <ReplyComposer :thread="thread" @sent="load" />
     </div>
-    <div v-else class="h-full flex items-center justify-center text-zinc-500" data-test="inbox-empty-state">
+    <div v-else class="h-full flex items-center justify-center text-muted-foreground" data-test="inbox-empty-state">
         Select a conversation to start replying.
     </div>
 </template>

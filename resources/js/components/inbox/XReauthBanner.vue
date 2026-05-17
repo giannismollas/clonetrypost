@@ -16,7 +16,7 @@ defineProps<{
         <IconAlertCircle class="size-5 text-amber-600 shrink-0" />
         <div class="flex-1 text-sm">
             <span class="font-medium">Activate X inbox</span>
-            <span class="text-zinc-700 dark:text-zinc-300">
+            <span class="text-foreground">
                 — your connected X account{{ accounts.length > 1 ? 's' : '' }} need a one-click re-authorization to read DMs and comments.
             </span>
         </div>
