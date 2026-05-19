@@ -96,7 +96,7 @@ const inviteUrl = computed(() => `/invites/${props.invite.id}`);
                                 </Link>
                             </Button>
                             <Button as-child variant="outline" size="lg" class="w-full">
-                                <Link :href="register({ query: { redirect: inviteUrl, email: invite.email } })">
+                                <Link :href="register({ query: { redirect: inviteUrl, email: invite.email, invite: invite.id } })">
                                     {{ $t('auth.accept_invite.create_account') }}
                                 </Link>
                             </Button>

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\Api\LoadWorkspaceFromToken;
+use App\Http\Middleware\App\EnsureRegistrationEnabled;
 use App\Http\Middleware\App\HandleInertiaRequests;
 use App\Http\Middleware\App\SetLocale;
 use Illuminate\Foundation\Application;
@@ -32,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'workspace.token' => LoadWorkspaceFromToken::class,
+            'registration.enabled' => EnsureRegistrationEnabled::class,
         ]);
 
         $middleware->preventRequestForgery(except: [

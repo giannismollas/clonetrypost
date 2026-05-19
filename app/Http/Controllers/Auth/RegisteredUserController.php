@@ -57,6 +57,8 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
+        $request->session()->forget('pending_invite_id');
+
         if ($redirect = $request->input('redirect')) {
             if (str_starts_with($redirect, '/') && ! str_starts_with($redirect, '//')) {
                 return redirect($redirect);

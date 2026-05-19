@@ -19,7 +19,9 @@ beforeEach(function () {
     ]);
 });
 
-test('show invite displays invite details for guest', function () {
+test('show invite displays invite details for guest when not self_hosted', function () {
+    config()->set('trypost.self_hosted', false);
+
     $invite = Invite::factory()->create([
         'account_id' => $this->account->id,
         'invited_by' => $this->owner->id,
@@ -36,6 +38,26 @@ test('show invite displays invite details for guest', function () {
         ->where('invite.id', $invite->id)
         ->where('invite.email', 'newuser@example.com')
         ->where('invite.account.name', $this->account->name)
+    );
+});
+
+test('show invite displays invite details for guest when self_hosted (page renders, gate happens on /register)', function () {
+    config()->set('trypost.self_hosted', true);
+
+    $invite = Invite::factory()->create([
+        'account_id' => $this->account->id,
+        'invited_by' => $this->owner->id,
+        'email' => 'newuser@example.com',
+        'workspaces' => [$this->workspace->id],
+    ]);
+
+    $response = $this->get(route('app.invites.show', $invite));
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('auth/AcceptInvite', false)
+        ->has('invite')
+        ->where('invite.id', $invite->id)
     );
 });
 

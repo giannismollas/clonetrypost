@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Form, Head } from '@inertiajs/vue3';
+import { Form, Head, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 import SocialLogin from '@/components/auth/SocialLogin.vue';
 import InputError from '@/components/InputError.vue';
@@ -19,6 +20,9 @@ defineProps<{
     email?: string | null;
     redirect?: string | null;
 }>();
+
+const page = usePage();
+const isSelfHosted = computed(() => Boolean(page.props.selfHosted));
 </script>
 
 <template>
@@ -69,7 +73,7 @@ defineProps<{
                     </Button>
                 </div>
 
-                <div class="text-center text-sm text-muted-foreground">
+                <div v-if="!isSelfHosted" class="text-center text-sm text-muted-foreground">
                     {{ $t('auth.login.no_account') }}
                     <TextLink :href="register()" :tabindex="5">{{ $t('auth.login.sign_up') }}</TextLink>
                 </div>

@@ -6,6 +6,8 @@ use App\Models\User;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\User as SocialiteUser;
 
+beforeEach(fn () => config()->set('trypost.self_hosted', false));
+
 test('email registration saves utm parameters from the register page query string', function () {
     $utms = [
         'utm_source' => 'peerlist',

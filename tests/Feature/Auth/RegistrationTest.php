@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Models\User;
 
+beforeEach(fn () => config()->set('trypost.self_hosted', false));
+
 test('registration screen can be rendered', function () {
     $response = $this->get(route('register'));
 
@@ -110,4 +112,75 @@ test('new users registering via invite have verified email automatically', funct
     $user = User::where('email', 'test@example.com')->first();
 
     expect($user->email_verified_at)->not->toBeNull();
+});
+
+test('register page returns 404 when self_hosted and no pending invite in session', function () {
+    config()->set('trypost.self_hosted', true);
+
+    $response = $this->get(route('register'));
+
+    $response->assertNotFound();
+});
+
+test('register POST returns 404 when self_hosted and no pending invite in session', function () {
+    config()->set('trypost.self_hosted', true);
+
+    $response = $this->post(route('register.store'), [
+        'name' => 'Test User',
+        'email' => 'test@example.com',
+        'password' => 'Password123!',
+    ]);
+
+    $response->assertNotFound();
+    expect(User::where('email', 'test@example.com')->exists())->toBeFalse();
+});
+
+test('register page renders when self_hosted but session has pending invite', function () {
+    config()->set('trypost.self_hosted', true);
+
+    $response = $this
+        ->withSession(['pending_invite_id' => 'invite-abc'])
+        ->get(route('register'));
+
+    $response->assertOk();
+});
+
+test('register page renders when self_hosted with invite query param and persists it to session', function () {
+    config()->set('trypost.self_hosted', true);
+
+    $response = $this->get(route('register', ['invite' => 'invite-xyz']));
+
+    $response->assertOk();
+    $response->assertSessionHas('pending_invite_id', 'invite-xyz');
+});
+
+test('signup clears pending_invite_id from session', function () {
+    config()->set('trypost.self_hosted', true);
+
+    $this->withSession(['pending_invite_id' => 'invite-abc'])
+        ->post(route('register.store'), [
+            'name' => 'Invitee',
+            'email' => 'invitee@example.com',
+            'password' => 'Password123!',
+        ]);
+
+    expect(session('pending_invite_id'))->toBeNull();
+    expect(User::where('email', 'invitee@example.com')->exists())->toBeTrue();
+});
+
+test('register works normally when not self_hosted even with pending invite in session', function () {
+    config()->set('trypost.self_hosted', false);
+
+    $response = $this
+        ->withSession(['pending_invite_id' => 'invite-abc'])
+        ->post(route('register.store'), [
+            'name' => 'Invitee',
+            'email' => 'invitee@example.com',
+            'password' => 'Password123!',
+        ]);
+
+    $response->assertSessionHasNoErrors();
+    expect(User::where('email', 'invitee@example.com')->exists())->toBeTrue();
+    // Cleared regardless of mode, since signup consumes the marker.
+    expect(session('pending_invite_id'))->toBeNull();
 });
