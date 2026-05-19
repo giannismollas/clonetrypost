@@ -196,11 +196,11 @@ it('cannot update post from another workspace', function () {
         ->assertNotFound();
 });
 
-it('cannot update published post', function () {
+it('cannot update post in any terminal state', function (PostStatus $status) {
     $post = Post::factory()->create([
         'workspace_id' => $this->workspace->id,
         'user_id' => $this->user->id,
-        'status' => PostStatus::Published,
+        'status' => $status,
     ]);
 
     $postPlatform = PostPlatform::factory()->linkedin()->create([
@@ -220,7 +220,12 @@ it('cannot update published post', function () {
             ],
         ])
         ->assertUnprocessable();
-});
+})->with([
+    PostStatus::Published,
+    PostStatus::PartiallyPublished,
+    PostStatus::Failed,
+    PostStatus::Publishing,
+]);
 
 it('validates post update fields', function () {
     $post = Post::factory()->create([

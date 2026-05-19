@@ -106,18 +106,23 @@ test('update post 404 from another workspace', function () {
     $response->assertHasErrors(['Post not found.']);
 });
 
-test('update post rejects already-published post', function () {
+test('update post rejects posts in any terminal state', function (PostStatus $status) {
     $post = Post::factory()->create([
         'workspace_id' => $this->workspace->id,
         'user_id' => $this->user->id,
-        'status' => PostStatus::Published,
+        'status' => $status,
     ]);
 
     $response = TryPostServer::actingAs($this->user)
         ->tool(UpdatePostTool::class, ['post_id' => $post->id, 'content' => 'x']);
 
     $response->assertHasErrors(['Cannot edit a published post.']);
-});
+})->with([
+    PostStatus::Published,
+    PostStatus::PartiallyPublished,
+    PostStatus::Failed,
+    PostStatus::Publishing,
+]);
 
 test('update post rejects a platforms[].id that belongs to another post', function () {
     $myPost = Post::factory()->create([
