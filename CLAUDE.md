@@ -235,6 +235,12 @@ Vue components must have a single root element.
 - In `<DialogFooter>`, put the **primary action button first** in the markup, then secondary/cancel (e.g. Save → Cancel). `DialogFooter` uses `flex-col-reverse` on mobile and `sm:flex-row sm:justify-start` on desktop, so the first child is the leftmost action on larger screens.
 - Match sibling dialogs in the same feature area before inventing a new footer layout.
 
+## AI agents (`app/Ai/Agents`)
+
+- **Never** embed prompts in PHP (`<<<PROMPT`, heredocs, or long string literals in `instructions()`).
+- Put system/instruction text in Blade under `resources/views/prompts/` (e.g. `prompts.post_content.generator`, `prompts.post_image.regenerator`).
+- In `instructions()`, return `view('prompts....', [...])->render()` and pass only the variables the Blade file needs — same pattern as `PostContentStreamer`, `PostContentReviewer`, and `BrandAnalyzer`.
+
 ## Icons (@tabler/icons-vue)
 
 - This project uses `@tabler/icons-vue` for all icons. NEVER use `lucide-vue-next`.

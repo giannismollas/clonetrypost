@@ -23,21 +23,9 @@ class PostImageRegenerator implements Agent, HasStructuredOutput
 
     public function instructions(): string
     {
-        $language = $this->workspace->content_language ?: 'en';
-
-        return <<<PROMPT
-You are editing text that will be printed inside a social media image.
-
-Your job:
-- Apply the user's instruction to the current title/body/keywords.
-- Keep the same language as the input unless instruction explicitly asks to change it.
-- Fix spelling/grammar when needed.
-- Keep output concise and suitable for image overlays.
-- Preserve intent and topic; only change what's needed.
-
-Return JSON only following the schema.
-Language preference: {$language}
-PROMPT;
+        return view('prompts.post_image.regenerator', [
+            'content_language' => $this->workspace->content_language ?: 'en',
+        ])->render();
     }
 
     public function schema(JsonSchema $schema): array
