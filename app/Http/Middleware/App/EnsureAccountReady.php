@@ -24,15 +24,8 @@ class EnsureAccountReady
 
         $account = $user->account;
 
-        if (! config('trypost.self_hosted')) {
-            $hasAccess = $account && (
-                $account->subscribed(Account::SUBSCRIPTION_NAME)
-                || $account->isOnTrial()
-            );
-
-            if (! $hasAccess) {
-                return redirect()->route('app.subscribe');
-            }
+        if (! config('trypost.self_hosted') && (! $account || ! $account->subscribed(Account::SUBSCRIPTION_NAME))) {
+            return redirect()->route('app.subscribe');
         }
 
         if (! $user->workspaces()->exists()) {

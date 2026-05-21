@@ -93,10 +93,6 @@ class Account extends Model
 
     public function isOnTrial(): bool
     {
-        if ($this->onGenericTrial()) {
-            return true;
-        }
-
         return (bool) $this->subscription(self::SUBSCRIPTION_NAME)?->onTrial();
     }
 
@@ -104,11 +100,11 @@ class Account extends Model
     {
         $subscription = $this->subscription(self::SUBSCRIPTION_NAME);
 
-        return match (true) {
-            (bool) $subscription?->onTrial() => $subscription->trial_ends_at,
-            $this->onGenericTrial() => $this->trial_ends_at,
-            default => null,
-        };
+        if (! $subscription?->onTrial()) {
+            return null;
+        }
+
+        return $subscription->trial_ends_at;
     }
 
     /**

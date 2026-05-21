@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\User;
 
-use App\Enums\Plan\Slug;
 use App\Jobs\PostHog\SyncUser;
 use App\Models\Account;
-use App\Models\Plan;
 use App\Models\User;
 use App\Services\PostHogService;
 use Illuminate\Support\Facades\DB;
@@ -26,8 +24,6 @@ class CreateUser
             $account = Account::create([
                 'name' => data_get($data, 'name')."'s Account",
                 'billing_email' => data_get($data, 'email'),
-                'plan_id' => Plan::where('slug', Slug::Starter)->value('id'),
-                'trial_ends_at' => now()->addDays(config('cashier.trial_days')),
             ]);
 
             $user = User::create(array_merge([

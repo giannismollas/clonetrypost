@@ -7,7 +7,6 @@ use App\Enums\UserWorkspace\Role;
 use App\Models\Account;
 use App\Models\User;
 use App\Models\Workspace;
-use Carbon\Carbon;
 use Database\Seeders\PlanSeeder;
 
 beforeEach(function () {
@@ -15,9 +14,7 @@ beforeEach(function () {
     $this->seed(PlanSeeder::class);
 });
 
-test('user on generic trial can access the app', function () {
-    Carbon::setTestNow('2026-05-14 12:00:00');
-
+test('user without subscription is redirected to subscribe', function () {
     $user = CreateUser::execute([
         'name' => 'Alice',
         'email' => 'alice@example.com',
@@ -35,12 +32,10 @@ test('user on generic trial can access the app', function () {
 
     $response = $this->actingAs($user->fresh())->get(route('app.accounts'));
 
-    $response->assertOk();
+    $response->assertRedirect(route('app.subscribe'));
 });
 
-test('user whose trial expired is redirected to subscribe', function () {
-    Carbon::setTestNow('2026-05-14 12:00:00');
-
+test('user with active subscription can access the app', function () {
     $user = CreateUser::execute([
         'name' => 'Alice',
         'email' => 'alice2@example.com',
@@ -56,11 +51,16 @@ test('user whose trial expired is redirected to subscribe', function () {
     $workspace->members()->attach($user->id, ['role' => Role::Member->value]);
     $user->update(['current_workspace_id' => $workspace->id]);
 
-    Carbon::setTestNow('2026-05-21 12:01:00');
+    $user->account->subscriptions()->create([
+        'type' => Account::SUBSCRIPTION_NAME,
+        'stripe_id' => 'sub_test_'.fake()->uuid(),
+        'stripe_status' => 'active',
+        'stripe_price' => 'price_123',
+    ]);
 
     $response = $this->actingAs($user->fresh())->get(route('app.accounts'));
 
-    $response->assertRedirect(route('app.subscribe'));
+    $response->assertOk();
 });
 
 test('user on trialing subscription (legacy trial-with-card) can access the app', function () {
