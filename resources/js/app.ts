@@ -1,7 +1,7 @@
 import '../css/app.css';
+import './echo';
 
 import { createInertiaApp, router } from '@inertiajs/vue3';
-import { configureEcho } from '@laravel/echo-vue';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { i18nVue } from 'laravel-vue-i18n';
 import type { DefineComponent } from 'vue';
@@ -11,10 +11,6 @@ import { initializeDataLayer } from './datalayer';
 import dayjs from './dayjs';
 import { capturePageview, initializePostHog, syncPostHogContext } from './posthog';
 import type { Auth } from './types';
-
-configureEcho({
-    broadcaster: 'reverb',
-});
 
 const appName = import.meta.env.VITE_APP_NAME || 'TryPost.it';
 
