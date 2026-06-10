@@ -4,31 +4,29 @@ declare(strict_types=1);
 
 namespace App\Observers;
 
-use App\Actions\Automation\Trigger\DispatchPostTriggerAutomations;
 use App\Enums\Automation\Trigger\Type as TriggerType;
 use App\Enums\Post\Status as PostStatus;
+use App\Jobs\Automation\DispatchPostTriggerAutomationsJob;
 use App\Models\Post;
 
 class PostObserver
 {
-    public function __construct(private DispatchPostTriggerAutomations $dispatch) {}
-
     public function saved(Post $post): void
     {
         if (! $post->wasChanged('status')) {
             return;
         }
 
-        $status = $post->status;
+        $triggerType = match ($post->status) {
+            PostStatus::Published => TriggerType::PostPublished,
+            PostStatus::Scheduled => TriggerType::PostScheduled,
+            default => null,
+        };
 
-        if ($status === PostStatus::Published) {
-            ($this->dispatch)($post, TriggerType::PostPublished);
-
+        if ($triggerType === null) {
             return;
         }
 
-        if ($status === PostStatus::Scheduled) {
-            ($this->dispatch)($post, TriggerType::PostScheduled);
-        }
+        DispatchPostTriggerAutomationsJob::dispatch($post, $triggerType)->afterCommit();
     }
 }

@@ -5,7 +5,7 @@ import { computed, ref } from 'vue';
 import { Avatar } from '@/components/ui/avatar';
 import { getMediaValidationWarning } from '@/composables/useMedia';
 import { getPlatformLogo } from '@/composables/usePlatformLogo';
-import { ContentType } from '@/enums/content-type';
+import { ContentType } from '@/types/content-type';
 import type { MediaItem } from '@/types/media';
 
 interface SocialAccount {
