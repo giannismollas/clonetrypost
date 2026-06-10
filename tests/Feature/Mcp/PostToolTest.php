@@ -323,3 +323,36 @@ test('update post rejects an invalid aspect_ratio', function () {
 
     $response->assertHasErrors();
 });
+
+test('create post returns the platform meta in the response (read-back)', function () {
+    TryPostServer::actingAs($this->user)
+        ->tool(CreatePostTool::class, [
+            'platforms' => [
+                ['social_account_id' => $this->socialAccount->id, 'content_type' => 'linkedin_post', 'meta' => ['aspect_ratio' => '4:5']],
+            ],
+        ])
+        ->assertOk()
+        ->assertStructuredContent(fn (AssertableJson $json) => $json->where('platforms.0.meta.aspect_ratio', '4:5')->etc());
+});
+
+test('update post accepts a valid aspect_ratio and persists it', function () {
+    $post = Post::factory()->create([
+        'workspace_id' => $this->workspace->id,
+        'user_id' => $this->user->id,
+    ]);
+    $platform = PostPlatform::factory()->create([
+        'post_id' => $post->id,
+        'social_account_id' => $this->socialAccount->id,
+    ]);
+
+    TryPostServer::actingAs($this->user)
+        ->tool(UpdatePostTool::class, [
+            'post_id' => $post->id,
+            'platforms' => [
+                ['id' => $platform->id, 'meta' => ['aspect_ratio' => '16:9']],
+            ],
+        ])
+        ->assertOk();
+
+    expect($platform->fresh()->meta['aspect_ratio'])->toBe('16:9');
+});
