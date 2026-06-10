@@ -24,16 +24,6 @@ class LinkedInPageController extends SocialController
 
     protected SocialPlatform $platform = SocialPlatform::LinkedInPage;
 
-    protected array $scopes = [
-        'openid',
-        'profile',
-        'email',
-        'w_organization_social',
-        'r_organization_social',
-        'rw_organization_admin',
-        'w_member_social',
-    ];
-
     public function connect(Request $request): SymfonyResponse|RedirectResponse
     {
         $this->ensurePlatformEnabled();
@@ -55,7 +45,7 @@ class LinkedInPageController extends SocialController
 
         return Inertia::location(
             Socialite::driver($this->driver)
-                ->scopes($this->scopes)
+                ->scopes(config('trypost.platforms.linkedin-page.scopes'))
                 ->with([
                     'redirect_uri' => config('services.linkedin-openid.redirect_page'),
                 ])
@@ -80,7 +70,7 @@ class LinkedInPageController extends SocialController
 
         try {
             $socialUser = Socialite::driver($this->driver)
-                ->scopes($this->scopes)
+                ->scopes(config('trypost.platforms.linkedin-page.scopes'))
                 ->with([
                     'redirect_uri' => config('services.linkedin-openid.redirect_page'),
                 ])

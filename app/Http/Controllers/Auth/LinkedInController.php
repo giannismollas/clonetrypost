@@ -22,14 +22,6 @@ class LinkedInController extends SocialController
 
     protected SocialPlatform $platform = SocialPlatform::LinkedIn;
 
-    protected array $scopes = [
-        'openid',
-        'profile',
-        'email',
-        'r_basicprofile',
-        'w_member_social',
-    ];
-
     public function connect(Request $request): Response|RedirectResponse
     {
         $this->ensurePlatformEnabled();
@@ -42,7 +34,7 @@ class LinkedInController extends SocialController
 
         $this->authorize('manageAccounts', $workspace);
 
-        return $this->redirectToProvider($request, $this->driver, $this->scopes);
+        return $this->redirectToProvider($request, $this->driver, config('trypost.platforms.linkedin.scopes'));
     }
 
     public function callback(Request $request): View
