@@ -605,9 +605,10 @@ test('tiktok publisher uses default settings when only privacy_level is set', fu
         $body = json_decode($request->body(), true);
         $postInfo = data_get($body, 'post_info');
 
-        // privacy_level passes through; toggles use safe defaults (duet/stitch off, comments on).
+        // privacy_level passes through; all interaction toggles default to OFF to match
+        // the UI checkbox state (TikTok UX guideline: none should be checked by default).
         return $postInfo['privacy_level'] === 'PUBLIC_TO_EVERYONE'
-            && $postInfo['disable_comment'] === false
+            && $postInfo['disable_comment'] === true
             && $postInfo['disable_duet'] === true
             && $postInfo['disable_stitch'] === true
             && ! isset($postInfo['is_aigc'])
