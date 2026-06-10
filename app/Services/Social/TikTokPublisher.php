@@ -108,7 +108,7 @@ class TikTokPublisher
             'title' => $content ?? '',
             'privacy_level' => $this->resolveRequiredPrivacyLevel($postPlatform),
             'disable_duet' => ! data_get($meta, 'allow_duet', false),
-            'disable_comment' => ! data_get($meta, 'allow_comments', true),
+            'disable_comment' => ! data_get($meta, 'allow_comments', false),
             'disable_stitch' => ! data_get($meta, 'allow_stitch', false),
         ];
 
@@ -142,7 +142,7 @@ class TikTokPublisher
         $postInfo = [
             'description' => $content ?? '',
             'privacy_level' => $this->resolveRequiredPrivacyLevel($postPlatform),
-            'disable_comment' => ! data_get($meta, 'allow_comments', true),
+            'disable_comment' => ! data_get($meta, 'allow_comments', false),
         ];
 
         if (data_get($meta, 'brand_content_toggle', false)) {
