@@ -4,11 +4,14 @@ namespace App\Models;
 
 use App\Enums\Automation\Node\Type as NodeType;
 use App\Enums\Automation\NodeRun\Status;
+use App\Observers\AutomationNodeRunObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+#[ObservedBy([AutomationNodeRunObserver::class])]
 class AutomationNodeRun extends Model
 {
     use HasFactory;
