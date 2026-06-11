@@ -101,6 +101,71 @@ test('bluesky publisher parses hashtags as facets', function () {
     });
 });
 
+test('bluesky publisher resolves mentions to DIDs as facets', function () {
+    $this->post->update(['content' => 'Shout out to @friend.bsky.social']);
+
+    Http::fake([
+        'https://bsky.social/xrpc/com.atproto.identity.resolveHandle*' => Http::response([
+            'did' => 'did:plc:friend456',
+        ], 200),
+        'https://bsky.social/xrpc/com.atproto.repo.createRecord' => Http::response([
+            'uri' => 'at://did:plc:testuser123/app.bsky.feed.post/3abc123xyz',
+            'cid' => 'bafyreiabc123',
+        ], 200),
+    ]);
+
+    $this->publisher->publish($this->postPlatform);
+
+    Http::assertSent(function ($request) {
+        $record = $request['record'] ?? null;
+
+        if (! $record || ! isset($record['facets'])) {
+            return false;
+        }
+
+        foreach ($record['facets'] as $facet) {
+            $feature = $facet['features'][0];
+            if ($feature['$type'] === 'app.bsky.richtext.facet#mention') {
+                // The facet must carry the resolved DID, not the raw handle.
+                return $feature['did'] === 'did:plc:friend456';
+            }
+        }
+
+        return false;
+    });
+});
+
+test('bluesky publisher skips mention facet when handle cannot be resolved', function () {
+    $this->post->update(['content' => 'Shout out to @ghost.bsky.social']);
+
+    Http::fake([
+        '*/xrpc/com.atproto.identity.resolveHandle*' => Http::response(['error' => 'InvalidRequest'], 400),
+        'https://bsky.social/xrpc/com.atproto.repo.createRecord' => Http::response([
+            'uri' => 'at://did:plc:testuser123/app.bsky.feed.post/3abc123xyz',
+            'cid' => 'bafyreiabc123',
+        ], 200),
+    ]);
+
+    // Post still publishes; the unresolved @handle stays as plain text.
+    $result = $this->publisher->publish($this->postPlatform);
+
+    expect($result['id'])->toBe('3abc123xyz');
+
+    Http::assertSent(function ($request) {
+        $record = $request['record'] ?? null;
+
+        if (! $record) {
+            return false;
+        }
+
+        $hasMentionFacet = collect($record['facets'] ?? [])->contains(
+            fn ($facet) => $facet['features'][0]['$type'] === 'app.bsky.richtext.facet#mention'
+        );
+
+        return str_contains($record['text'], '@ghost.bsky.social') && ! $hasMentionFacet;
+    });
+});
+
 test('bluesky publisher uploads images', function () {
     // Create a media item through the PostPlatform's media() relation
     $this->post->update([

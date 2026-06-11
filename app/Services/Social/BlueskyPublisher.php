@@ -60,7 +60,7 @@ class BlueskyPublisher
 
         // Parse facets (links, mentions, hashtags) from text
         $text = $content ?? '';
-        $facets = $this->parseFacets($text);
+        $facets = $this->parseFacets($text, $service, $account);
 
         // Create post record
         $record = [
@@ -166,7 +166,7 @@ class BlueskyPublisher
         }
     }
 
-    private function parseFacets(string $text): array
+    private function parseFacets(string $text, ?string $service = null, ?SocialAccount $account = null): array
     {
         $facets = [];
 
@@ -205,9 +205,22 @@ class BlueskyPublisher
             PREG_OFFSET_CAPTURE
         );
 
+        $didCache = [];
         foreach ($mentionMatches[0] as $match) {
             $mention = $match[0];
             $handle = substr($mention, 1); // Remove @
+
+            // A mention facet requires the target's DID, not the handle. Bluesky
+            // does NOT resolve a handle placed in the `did` field — sending one
+            // makes the whole record invalid (InvalidRequest / "Invalid post
+            // data"), so every post containing a mention fails to publish.
+            // Resolve the handle to a DID here; if it can't be resolved, skip the
+            // facet so the post still publishes with the @handle as plain text.
+            $did = $didCache[$handle] ?? ($didCache[$handle] = $this->resolveHandleToDid($handle, $service, $account));
+            if ($did === null) {
+                continue;
+            }
+
             $start = $this->getUtf8ByteOffset($text, $match[1]);
             $end = $start + strlen($mention);
 
@@ -219,7 +232,7 @@ class BlueskyPublisher
                 'features' => [
                     [
                         '$type' => 'app.bsky.richtext.facet#mention',
-                        'did' => $handle, // Will be resolved by Bluesky
+                        'did' => $did,
                     ],
                 ],
             ];
@@ -254,6 +267,49 @@ class BlueskyPublisher
         }
 
         return $facets;
+    }
+
+    /**
+     * Resolve a Bluesky handle to its DID via com.atproto.identity.resolveHandle.
+     *
+     * Tries the account's own PDS first (authenticated), then falls back to the
+     * public AppView and the bsky.social entryway. Returns null on failure so the
+     * caller can skip the mention facet instead of sending an invalid record.
+     */
+    private function resolveHandleToDid(string $handle, ?string $service = null, ?SocialAccount $account = null): ?string
+    {
+        $endpoints = array_values(array_unique(array_filter([
+            $service,
+            'https://public.api.bsky.app',
+            'https://bsky.social',
+        ])));
+
+        foreach ($endpoints as $endpoint) {
+            try {
+                $request = $this->socialHttp();
+                if ($account && $endpoint === $service) {
+                    $request = $request->withToken($account->access_token);
+                }
+
+                $response = $request->get(
+                    "{$endpoint}/xrpc/com.atproto.identity.resolveHandle",
+                    ['handle' => $handle],
+                );
+
+                $did = $response->successful() ? data_get($response->json(), 'did') : null;
+                if (is_string($did) && str_starts_with($did, 'did:')) {
+                    return $did;
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Bluesky handle resolution failed', [
+                    'handle' => $handle,
+                    'endpoint' => $endpoint,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return null;
     }
 
     private function getUtf8ByteOffset(string $text, int $charOffset): int
