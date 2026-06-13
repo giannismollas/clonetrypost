@@ -19,6 +19,7 @@ return new class extends Migration
             $table->foreignUuid('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('name');
             $table->string('status')->default('draft');
+            $table->string('trigger_type')->nullable();
             $table->json('nodes')->nullable();
             $table->json('connections')->nullable();
             $table->timestamp('activated_at')->nullable();
@@ -26,6 +27,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['workspace_id', 'status']);
+            $table->index(['status', 'trigger_type']);
         });
     }
 

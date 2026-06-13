@@ -17,6 +17,27 @@ it('persists automation with json columns and enum cast', function () {
     expect($automation->nodes[0]['type'])->toBe('trigger');
 });
 
+it('derives the trigger_type column from the trigger node on save', function () {
+    $automation = Automation::factory()->withScheduleTrigger()->create();
+
+    expect($automation->trigger_type)->toBe('schedule');
+
+    $automation->update([
+        'nodes' => [
+            ['id' => 'trigger_1', 'type' => 'trigger', 'position' => ['x' => 0, 'y' => 0],
+                'data' => ['trigger_type' => 'post_published']],
+        ],
+    ]);
+
+    expect($automation->fresh()->trigger_type)->toBe('post_published');
+});
+
+it('nulls the trigger_type column when there is no trigger node', function () {
+    $automation = Automation::factory()->create(['nodes' => []]);
+
+    expect($automation->trigger_type)->toBeNull();
+});
+
 it('relates trigger items, runs and node runs', function () {
     $automation = Automation::factory()->create();
     $item = AutomationTriggerItem::factory()->for($automation)->create();

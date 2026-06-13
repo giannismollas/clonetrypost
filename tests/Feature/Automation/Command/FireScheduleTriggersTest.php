@@ -17,3 +17,14 @@ it('fires only schedule-trigger automations whose cron matches', function () {
     expect(AutomationTriggerItem::where('automation_id', $scheduleAutomation->id)->count())->toBe(1);
     expect(AutomationTriggerItem::where('automation_id', $rssAutomation->id)->count())->toBe(0);
 });
+
+it('ignores automations whose trigger is not a schedule', function () {
+    $postAutomation = Automation::factory()->active()->create([
+        'nodes' => [['id' => 't', 'type' => 'trigger', 'position' => ['x' => 0, 'y' => 0],
+            'data' => ['trigger_type' => 'post_published']]],
+    ]);
+
+    $this->artisan('automation:fire-schedule')->assertSuccessful();
+
+    expect(AutomationTriggerItem::where('automation_id', $postAutomation->id)->count())->toBe(0);
+});

@@ -6,6 +6,7 @@ namespace App\Console\Commands\Automation;
 
 use App\Actions\Automation\Trigger\FireScheduleTrigger;
 use App\Enums\Automation\Status;
+use App\Enums\Automation\Trigger\Type as TriggerType;
 use App\Models\Automation;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -19,12 +20,9 @@ class FireScheduleTriggers extends Command
     {
         Automation::query()
             ->where('status', Status::Active)
+            ->where('trigger_type', TriggerType::Schedule->value)
             ->chunkById(50, function ($automations) use ($fire) {
                 foreach ($automations as $automation) {
-                    $triggerNode = collect($automation->nodes ?? [])->firstWhere('type', 'trigger');
-                    if (($triggerNode['data']['trigger_type'] ?? null) !== 'schedule') {
-                        continue;
-                    }
                     $fire($automation);
                 }
             });

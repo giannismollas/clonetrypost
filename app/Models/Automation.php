@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\Automation\Node\Type as NodeType;
 use App\Enums\Automation\Status;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -49,6 +50,7 @@ class Automation extends Model
                 $automation->variables ?? [],
                 $automation->getOriginal('variables') ?? [],
             );
+            $automation->trigger_type = self::deriveTriggerType($automation->nodes ?? []);
         });
     }
 
@@ -100,6 +102,20 @@ class Automation extends Model
      * never received the real value) so we keep the existing ciphertext. Plain
      * text values get encrypted; already-encrypted strings pass through.
      *
+     * Denormalize the trigger node's type into an indexed column so the
+     * scheduler can filter by it in SQL instead of decoding every automation's
+     * `nodes` JSON each minute. Recomputed on every save so it cannot drift.
+     *
+     * @param  array<int, array<string, mixed>>  $nodes
+     */
+    private static function deriveTriggerType(array $nodes): ?string
+    {
+        $triggerNode = collect($nodes)->firstWhere('type', NodeType::Trigger->value);
+
+        return data_get($triggerNode, 'data.trigger_type');
+    }
+
+    /**
      * @param  array<int, array<string, mixed>>  $incoming
      * @param  array<int, array<string, mixed>>|string  $original
      * @return array<int, array<string, mixed>>

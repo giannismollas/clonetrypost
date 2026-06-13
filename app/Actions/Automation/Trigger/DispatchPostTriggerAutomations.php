@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Automation\Trigger;
 
 use App\Actions\Automation\Run\AdvanceAutomationRun;
+use App\Enums\Automation\Node\Type as NodeType;
 use App\Enums\Automation\Run\Status as RunStatus;
 use App\Enums\Automation\Status as AutomationStatus;
 use App\Enums\Automation\Trigger\Type as TriggerType;
@@ -32,11 +33,13 @@ class DispatchPostTriggerAutomations
         $automations = Automation::query()
             ->where('workspace_id', $post->workspace_id)
             ->where('status', AutomationStatus::Active)
+            ->where('trigger_type', $triggerType->value)
             ->get();
 
         foreach ($automations as $automation) {
-            $triggerNode = collect($automation->nodes ?? [])->firstWhere('type', 'trigger');
-            if (data_get($triggerNode, 'data.trigger_type') !== $triggerType->value) {
+            $triggerNode = collect($automation->nodes ?? [])->firstWhere('type', NodeType::Trigger->value);
+
+            if ($triggerNode === null) {
                 continue;
             }
 
