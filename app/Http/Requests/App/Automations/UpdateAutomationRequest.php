@@ -121,7 +121,7 @@ class UpdateAutomationRequest extends FormRequest
             NodeType::Trigger->value => [
                 'trigger_type' => ['required', Rule::in(array_column(TriggerType::cases(), 'value'))],
                 'cron' => ['required_if:nodes.*.data.trigger_type,'.TriggerType::Schedule->value, 'string'],
-                'schedule_field' => ['sometimes', Rule::in(['minutes', 'hours', 'days', 'weeks', 'months', 'custom'])],
+                'schedule_field' => ['sometimes', Rule::in(['minutes', 'hours', 'days', 'weeks', 'months'])],
                 'schedule_minutes_interval' => ['sometimes', 'integer', 'min:1', 'max:59'],
                 'schedule_hours_interval' => ['sometimes', 'integer', 'min:1', 'max:23'],
                 'schedule_days_interval' => ['sometimes', 'integer', 'min:1', 'max:31'],
@@ -130,7 +130,6 @@ class UpdateAutomationRequest extends FormRequest
                 'schedule_weekdays' => ['sometimes', 'array'],
                 'schedule_weekdays.*' => ['integer', 'min:0', 'max:6'],
                 'schedule_day_of_month' => ['sometimes', 'integer', 'min:1', 'max:31'],
-                'schedule_custom_cron' => ['sometimes', 'nullable', 'string'],
                 'schedule_timezone' => ['sometimes', 'string', 'timezone'],
             ],
             NodeType::FetchRss->value => [

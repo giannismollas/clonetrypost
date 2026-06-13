@@ -241,7 +241,6 @@ return [
                     'days' => 'Days',
                     'weeks' => 'Weeks',
                     'months' => 'Months',
-                    'custom' => 'Custom (Cron)',
                 ],
                 'minutes_interval' => 'Minutes between triggers',
                 'hours_interval' => 'Hours between triggers',
@@ -250,8 +249,6 @@ return [
                 'minute' => 'Trigger at minute',
                 'weekdays' => 'Trigger on weekdays',
                 'day_of_month' => 'Day of month',
-                'custom_cron' => 'Cron expression',
-                'custom_cron_hint' => 'Format: minute hour day month weekday',
                 'timezone_hint' => 'All times in :tz',
                 'weekday_names' => [
                     'sun' => 'Sun',

@@ -23,6 +23,5 @@ export interface ScheduleData {
     schedule_minute?: number;
     schedule_weekdays?: number[];
     schedule_day_of_month?: number;
-    schedule_custom_cron?: string;
     schedule_timezone?: string;
 }

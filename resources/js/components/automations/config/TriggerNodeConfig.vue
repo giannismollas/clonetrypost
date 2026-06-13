@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 
+import {
+    generateScheduleCron,
+    humanSchedule as scheduleSummary,
+    normalizeScheduleData,
+    timezoneAbbr as getTimezoneAbbr,
+    userTimezone as getUserTimezone,
+} from '@/components/automations/schedule-summary';
 import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
 import {
@@ -10,15 +17,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import {
-    generateScheduleCron,
-    humanSchedule as scheduleSummary,
-    normalizeScheduleData,
-    timezoneAbbr as getTimezoneAbbr,
-    userTimezone as getUserTimezone,
-} from '@/components/automations/schedule-summary';
-import { ScheduleField } from '@/types/automation/schedule-field';
 import type { ScheduleData } from '@/types/automation/schedule-data';
+import { ScheduleField } from '@/types/automation/schedule-field';
 import { TriggerType, type TriggerTypeValue } from '@/types/automation/trigger-type';
 
 const props = defineProps<{
@@ -132,7 +132,6 @@ watch(local, (val) => emit('update', val), { deep: true });
                         <SelectItem :value="ScheduleField.Days">{{ $t('automations.config.trigger.schedule.fields.days') }}</SelectItem>
                         <SelectItem :value="ScheduleField.Weeks">{{ $t('automations.config.trigger.schedule.fields.weeks') }}</SelectItem>
                         <SelectItem :value="ScheduleField.Months">{{ $t('automations.config.trigger.schedule.fields.months') }}</SelectItem>
-                        <SelectItem :value="ScheduleField.Custom">{{ $t('automations.config.trigger.schedule.fields.custom') }}</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
@@ -266,17 +265,8 @@ watch(local, (val) => emit('update', val), { deep: true });
                 </div>
             </template>
 
-            <template v-if="local.schedule_field === ScheduleField.Custom">
-                <div>
-                    <label class="mb-1 block text-sm font-medium">{{ $t('automations.config.trigger.schedule.custom_cron') }}</label>
-                    <Input v-model="local.schedule_custom_cron" placeholder="0 9 * * 1,3,5" />
-                    <InputError :message="errors?.cron" class="mt-1" />
-                    <p class="mt-1 text-xs text-foreground/50">{{ $t('automations.config.trigger.schedule.custom_cron_hint') }}</p>
-                </div>
-            </template>
-
             <p class="rounded-md bg-muted px-3 py-2 text-xs text-foreground/70">{{ humanSchedule }}</p>
-            <p v-if="local.schedule_field !== ScheduleField.Custom" class="text-xs text-foreground/50">{{ $t('automations.config.trigger.schedule.timezone_hint', { tz: timezoneAbbr }) }}</p>
+            <p class="text-xs text-foreground/50">{{ $t('automations.config.trigger.schedule.timezone_hint', { tz: timezoneAbbr }) }}</p>
         </template>
     </div>
 </template>

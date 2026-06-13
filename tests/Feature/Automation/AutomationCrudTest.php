@@ -87,7 +87,6 @@ it('persists every trigger schedule editor field through a save round-trip', fun
     'daily at time' => [['schedule_field' => 'days', 'schedule_days_interval' => 2, 'schedule_hour' => 8, 'schedule_minute' => 45]],
     'weekly on weekdays' => [['schedule_field' => 'weeks', 'schedule_weekdays' => [1, 3, 5], 'schedule_hour' => 14, 'schedule_minute' => 0]],
     'monthly on day-of-month' => [['schedule_field' => 'months', 'schedule_day_of_month' => 15, 'schedule_hour' => 9, 'schedule_minute' => 0]],
-    'custom cron' => [['schedule_field' => 'custom', 'schedule_custom_cron' => '0 9 * * 1,3,5']],
     'timezone' => [['schedule_timezone' => 'America/Sao_Paulo']],
     'all fields together' => [[
         'schedule_field' => 'weeks',
@@ -98,7 +97,6 @@ it('persists every trigger schedule editor field through a save round-trip', fun
         'schedule_minute' => 30,
         'schedule_weekdays' => [0, 6],
         'schedule_day_of_month' => 28,
-        'schedule_custom_cron' => '*/5 * * * *',
         'schedule_timezone' => 'Europe/Lisbon',
     ]],
 ]);

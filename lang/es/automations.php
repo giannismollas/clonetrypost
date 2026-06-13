@@ -241,7 +241,6 @@ return [
                     'days' => 'Días',
                     'weeks' => 'Semanas',
                     'months' => 'Meses',
-                    'custom' => 'Personalizado (Cron)',
                 ],
                 'minutes_interval' => 'Minutos entre disparos',
                 'hours_interval' => 'Horas entre disparos',
@@ -250,8 +249,6 @@ return [
                 'minute' => 'Disparar al minuto',
                 'weekdays' => 'Disparar en días',
                 'day_of_month' => 'Día del mes',
-                'custom_cron' => 'Expresión cron',
-                'custom_cron_hint' => 'Formato: minuto hora día mes día-de-semana',
                 'timezone_hint' => 'Todos los horarios en :tz',
                 'weekday_names' => [
                     'sun' => 'Dom',

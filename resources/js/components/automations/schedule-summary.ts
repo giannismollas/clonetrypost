@@ -1,8 +1,8 @@
 import { trans, transChoice } from 'laravel-vue-i18n';
 
 import dayjs from '@/dayjs';
-import { ScheduleField } from '@/types/automation/schedule-field';
 import type { ScheduleData } from '@/types/automation/schedule-data';
+import { ScheduleField } from '@/types/automation/schedule-field';
 import { TriggerType } from '@/types/automation/trigger-type';
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
@@ -81,7 +81,6 @@ export const normalizeScheduleData = (data: ScheduleData): ScheduleData => {
         schedule_minute: data.schedule_minute ?? inferred.schedule_minute ?? 0,
         schedule_weekdays: data.schedule_weekdays ?? inferred.schedule_weekdays ?? [1],
         schedule_day_of_month: data.schedule_day_of_month ?? inferred.schedule_day_of_month ?? 1,
-        schedule_custom_cron: data.schedule_custom_cron ?? '0 9 * * 1,3,5',
     };
 };
 
@@ -110,8 +109,6 @@ export const generateScheduleCron = (data: ScheduleData): string => {
             const d = num(data, 'schedule_day_of_month', 1, 1, 31);
             return `${minute} ${hour} ${d} * *`;
         }
-        case ScheduleField.Custom:
-            return (data.schedule_custom_cron ?? '').trim() || '0 9 * * *';
     }
     return '0 9 * * *';
 };
@@ -143,8 +140,6 @@ export const humanSchedule = (data: ScheduleData): string => {
             const d = num(data, 'schedule_day_of_month', 1, 1, 31);
             return trans(summaryKey('monthly'), { day: String(d), time });
         }
-        case ScheduleField.Custom:
-            return (data.schedule_custom_cron ?? '').trim() || '0 9 * * *';
     }
     return '';
 };
