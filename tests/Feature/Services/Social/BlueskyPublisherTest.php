@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\Workspace;
 use App\Services\Media\MediaOptimizer;
 use App\Services\Social\BlueskyPublisher;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 
 beforeEach(function () {
@@ -101,6 +102,73 @@ test('bluesky publisher parses hashtags as facets', function () {
     });
 });
 
+test('bluesky publisher strips trailing punctuation from URL facets', function () {
+    $this->post->update(['content' => 'see https://example.com).']);
+
+    Http::fake([
+        config('trypost.platforms.bluesky.default_service').'/xrpc/com.atproto.repo.createRecord' => Http::response([
+            'uri' => 'at://did:plc:testuser123/app.bsky.feed.post/3abc123xyz',
+            'cid' => 'bafyreiabc123',
+        ], 200),
+    ]);
+
+    $this->publisher->publish($this->postPlatform);
+
+    Http::assertSent(function ($request) {
+        $link = collect($request['record']['facets'] ?? [])
+            ->first(fn ($facet) => $facet['features'][0]['$type'] === 'app.bsky.richtext.facet#link');
+
+        return $link
+            && $link['features'][0]['uri'] === 'https://example.com'
+            && $link['index']['byteEnd'] === $link['index']['byteStart'] + strlen('https://example.com');
+    });
+});
+
+test('bluesky publisher keeps a closing paren that has a matching open paren', function () {
+    $this->post->update(['content' => 'see https://en.wikipedia.org/wiki/Foo_(bar)']);
+
+    Http::fake([
+        config('trypost.platforms.bluesky.default_service').'/xrpc/com.atproto.repo.createRecord' => Http::response([
+            'uri' => 'at://did:plc:testuser123/app.bsky.feed.post/3abc123xyz',
+            'cid' => 'bafyreiabc123',
+        ], 200),
+    ]);
+
+    $this->publisher->publish($this->postPlatform);
+
+    Http::assertSent(function ($request) {
+        $link = collect($request['record']['facets'] ?? [])
+            ->first(fn ($facet) => $facet['features'][0]['$type'] === 'app.bsky.richtext.facet#link');
+
+        // The trailing ')' is part of the URL because it has a matching '('.
+        return $link && $link['features'][0]['uri'] === 'https://en.wikipedia.org/wiki/Foo_(bar)';
+    });
+});
+
+test('bluesky publisher computes byte offsets after multibyte characters', function () {
+    $this->post->update(['content' => 'Olá 🎉 #café']);
+
+    Http::fake([
+        config('trypost.platforms.bluesky.default_service').'/xrpc/com.atproto.repo.createRecord' => Http::response([
+            'uri' => 'at://did:plc:testuser123/app.bsky.feed.post/3abc123xyz',
+            'cid' => 'bafyreiabc123',
+        ], 200),
+    ]);
+
+    $this->publisher->publish($this->postPlatform);
+
+    Http::assertSent(function ($request) {
+        $text = $request['record']['text'];
+        $tag = collect($request['record']['facets'] ?? [])
+            ->first(fn ($facet) => $facet['features'][0]['$type'] === 'app.bsky.richtext.facet#tag');
+
+        // byteStart must be the UTF-8 byte position of '#café', not its character index.
+        return $tag
+            && $tag['index']['byteStart'] === strpos($text, '#café')
+            && $tag['index']['byteEnd'] === strpos($text, '#café') + strlen('#café');
+    });
+});
+
 test('bluesky publisher resolves mentions to DIDs as facets', function () {
     $this->post->update(['content' => 'Shout out to @friend.bsky.social']);
 
@@ -167,6 +235,52 @@ test('bluesky publisher skips mention facet when handle cannot be resolved', fun
 
         return str_contains($record['text'], '@ghost.bsky.social') && ! $hasMentionFacet;
     });
+});
+
+test('bluesky publisher publishes as plain text when handle resolution errors', function () {
+    $this->post->update(['content' => 'hi @friend.bsky.social']);
+
+    Http::fake(function ($request) {
+        if (str_contains($request->url(), 'resolveHandle')) {
+            throw new ConnectionException('connection refused');
+        }
+
+        return Http::response([
+            'uri' => 'at://did:plc:testuser123/app.bsky.feed.post/3abc123xyz',
+            'cid' => 'bafyreiabc123',
+        ], 200);
+    });
+
+    // A network error resolving the handle must degrade to plain text, not fail the post.
+    $result = $this->publisher->publish($this->postPlatform);
+
+    expect($result['id'])->toBe('3abc123xyz');
+
+    Http::assertSent(function ($request) {
+        if (! str_contains($request->url(), 'createRecord')) {
+            return false;
+        }
+
+        $hasMention = collect($request['record']['facets'] ?? [])
+            ->contains(fn ($facet) => $facet['features'][0]['$type'] === 'app.bsky.richtext.facet#mention');
+
+        return str_contains($request['record']['text'], '@friend.bsky.social') && ! $hasMention;
+    });
+});
+
+test('bluesky publisher builds the post url from the configured web app host', function () {
+    config(['trypost.platforms.bluesky.web_app' => 'https://custom.bsky.example']);
+
+    Http::fake([
+        config('trypost.platforms.bluesky.default_service').'/xrpc/com.atproto.repo.createRecord' => Http::response([
+            'uri' => 'at://did:plc:testuser123/app.bsky.feed.post/3abc123xyz',
+            'cid' => 'bafyreiabc123',
+        ], 200),
+    ]);
+
+    $result = $this->publisher->publish($this->postPlatform);
+
+    expect($result['url'])->toBe('https://custom.bsky.example/profile/testuser.bsky.social/post/3abc123xyz');
 });
 
 test('bluesky publisher resolves some mentions and skips the unresolvable ones', function () {
@@ -239,8 +353,7 @@ test('bluesky publisher resolves a repeated handle only once', function () {
     });
 });
 
-test('bluesky publisher uploads images', function () {
-    // Create a media item through the PostPlatform's media() relation
+test('bluesky publisher attaches an uploaded image as an embed', function () {
     $this->post->update([
         'media' => [
             [
@@ -253,27 +366,40 @@ test('bluesky publisher uploads images', function () {
         ],
     ]);
 
-    Http::fake([
-        'https://bsky.social/xrpc/com.atproto.repo.uploadBlob' => Http::response([
-            'blob' => [
-                '$type' => 'blob',
-                'ref' => ['$link' => 'bafkreiabc123'],
-                'mimeType' => 'image/jpeg',
-                'size' => 12345,
-            ],
-        ], 200),
-        'https://bsky.social/xrpc/com.atproto.repo.createRecord' => Http::response([
-            'uri' => 'at://did:plc:testuser123/app.bsky.feed.post/3abc123xyz',
-            'cid' => 'bafyreiabc123',
-        ], 200),
-    ]);
+    $this->mock(MediaOptimizer::class)
+        ->shouldReceive('optimizeImage')
+        ->andReturnUsing(fn () => tap(tempnam(sys_get_temp_dir(), 'bsky_test_'), fn ($f) => file_put_contents($f, str_repeat('x', 1024))));
 
-    // We need to mock file_get_contents since we don't have actual media files
-    // For now, let's skip the upload part and test the post creation
+    Http::fake(function ($request) {
+        if (str_contains($request->url(), 'uploadBlob')) {
+            return Http::response([
+                'blob' => ['$type' => 'blob', 'ref' => ['$link' => 'bafkreiabc123'], 'mimeType' => 'image/jpeg', 'size' => 1024],
+            ], 200);
+        }
+
+        if (str_contains($request->url(), 'createRecord')) {
+            return Http::response([
+                'uri' => 'at://did:plc:testuser123/app.bsky.feed.post/3abc123xyz',
+                'cid' => 'bafyreiabc123',
+            ], 200);
+        }
+
+        return Http::response(str_repeat('x', 1024), 200); // media download
+    });
+
     $this->publisher->publish($this->postPlatform);
 
     Http::assertSent(function ($request) {
-        return str_contains($request->url(), 'createRecord');
+        if (! str_contains($request->url(), 'createRecord')) {
+            return false;
+        }
+
+        $embed = $request['record']['embed'] ?? null;
+
+        return $embed
+            && $embed['$type'] === 'app.bsky.embed.images'
+            && count($embed['images']) === 1
+            && data_get($embed, 'images.0.image.ref.$link') === 'bafkreiabc123';
     });
 });
 
@@ -436,26 +562,35 @@ test('bluesky publisher limits images to 4', function () {
     }
     $this->post->update(['media' => $mediaItems]);
 
-    Http::fake([
-        'https://bsky.social/xrpc/com.atproto.repo.uploadBlob' => Http::response([
-            'blob' => [
-                '$type' => 'blob',
-                'ref' => ['$link' => 'bafkreiabc123'],
-                'mimeType' => 'image/jpeg',
-                'size' => 12345,
-            ],
-        ], 200),
-        'https://bsky.social/xrpc/com.atproto.repo.createRecord' => Http::response([
-            'uri' => 'at://did:plc:testuser123/app.bsky.feed.post/3abc123xyz',
-            'cid' => 'bafyreiabc123',
-        ], 200),
-    ]);
+    $this->mock(MediaOptimizer::class)
+        ->shouldReceive('optimizeImage')
+        ->andReturnUsing(fn () => tap(tempnam(sys_get_temp_dir(), 'bsky_test_'), fn ($f) => file_put_contents($f, str_repeat('x', 1024))));
+
+    Http::fake(function ($request) {
+        if (str_contains($request->url(), 'uploadBlob')) {
+            return Http::response([
+                'blob' => ['$type' => 'blob', 'ref' => ['$link' => 'bafkreiabc123'], 'mimeType' => 'image/jpeg', 'size' => 1024],
+            ], 200);
+        }
+
+        if (str_contains($request->url(), 'createRecord')) {
+            return Http::response([
+                'uri' => 'at://did:plc:testuser123/app.bsky.feed.post/3abc123xyz',
+                'cid' => 'bafyreiabc123',
+            ], 200);
+        }
+
+        return Http::response(str_repeat('x', 1024), 200); // media download
+    });
 
     $this->publisher->publish($this->postPlatform);
 
-    // Bluesky only allows 4 images, so uploadBlob should be called at most 4 times
-    // (In practice it depends on file_get_contents succeeding, but the logic is there)
+    // Six images provided, but Bluesky caps at 4: only 4 blobs upload and the embed carries 4.
+    $uploads = Http::recorded(fn ($request) => str_contains($request->url(), 'uploadBlob'))->count();
+    expect($uploads)->toBe(4);
+
     Http::assertSent(function ($request) {
-        return str_contains($request->url(), 'createRecord');
+        return str_contains($request->url(), 'createRecord')
+            && count($request['record']['embed']['images'] ?? []) === 4;
     });
 });
