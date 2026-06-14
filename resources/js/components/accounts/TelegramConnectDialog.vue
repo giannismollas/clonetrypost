@@ -104,8 +104,10 @@ const start = async () => {
 };
 
 const copyCommand = () => {
-    copyToClipboard(`/connect ${code.value}`);
-    toast.success(trans('accounts.telegram.copied_toast'));
+    copyToClipboard(
+        `/connect ${code.value}`,
+        trans('accounts.telegram.copied_toast'),
+    );
 };
 
 watch(open, (isOpen) => {
@@ -127,7 +129,7 @@ onUnmounted(stopPolling);
                     <img
                         src="/images/accounts/telegram.png"
                         alt="Telegram"
-                        class="size-10"
+                        class="size-10 rounded-lg"
                     />
                     <div class="text-left">
                         <DialogTitle>{{
@@ -179,7 +181,7 @@ onUnmounted(stopPolling);
                 </p>
             </div>
 
-            <div v-else class="space-y-5 py-2">
+            <div v-else class="min-w-0 space-y-5 py-2">
                 <ol class="space-y-4 text-sm">
                     <li class="flex gap-3">
                         <span
