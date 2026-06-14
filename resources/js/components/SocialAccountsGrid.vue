@@ -121,6 +121,7 @@ const getProfileUrl = (platform: string, username: string | null, platformUserId
         'threads': `https://threads.net/@${username}`,
         'bluesky': `https://bsky.app/profile/${username}`,
         'pinterest': `https://pinterest.com/${username}`,
+        'telegram': `https://t.me/${username}`,
     };
     return urls[platform] || null;
 };
