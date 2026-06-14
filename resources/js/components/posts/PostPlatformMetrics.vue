@@ -9,6 +9,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { formatNumberCompact } from '@/lib/utils';
 import { metrics as metricsRoute } from '@/routes/app/posts/platforms';
 
 interface Metric {
@@ -38,13 +39,6 @@ const reactions = computed(() =>
 );
 
 const hasMetrics = computed(() => metrics.value.length > 0);
-
-const formatNumber = (n: number): string => {
-    if (n >= 1_000_000)
-        return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
-    if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
-    return n.toString();
-};
 
 const http = useHttp<Record<string, never>, MetricsResponse>({});
 
@@ -98,7 +92,7 @@ onMounted(async () => {
                     {{ metric.label }}
                 </p>
                 <p class="text-sm font-semibold tabular-nums">
-                    {{ formatNumber(metric.value) }}
+                    {{ formatNumberCompact(metric.value) }}
                 </p>
             </div>
         </div>
@@ -116,7 +110,7 @@ onMounted(async () => {
                         >
                             <IconUsers class="size-3.5 text-muted-foreground" />
                             <span class="font-semibold tabular-nums">{{
-                                formatNumber(subscribers.value)
+                                formatNumberCompact(subscribers.value)
                             }}</span>
                         </span>
                     </TooltipTrigger>
@@ -139,7 +133,7 @@ onMounted(async () => {
             >
                 <span class="text-sm leading-none">{{ reaction.label }}</span>
                 <span class="font-semibold tabular-nums">{{
-                    formatNumber(reaction.value)
+                    formatNumberCompact(reaction.value)
                 }}</span>
             </span>
         </div>
