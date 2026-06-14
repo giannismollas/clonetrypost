@@ -8,6 +8,7 @@ import FacebookAnalytics from '@/components/analytics/FacebookAnalytics.vue';
 import InstagramAnalytics from '@/components/analytics/InstagramAnalytics.vue';
 import LinkedInPageAnalytics from '@/components/analytics/LinkedInPageAnalytics.vue';
 import PinterestAnalytics from '@/components/analytics/PinterestAnalytics.vue';
+import TelegramAnalytics from '@/components/analytics/TelegramAnalytics.vue';
 import ThreadsAnalytics from '@/components/analytics/ThreadsAnalytics.vue';
 import TikTokAnalytics from '@/components/analytics/TikTokAnalytics.vue';
 import type { AnalyticsAccount } from '@/components/analytics/types';
@@ -113,6 +114,11 @@ const platformSupportsDateRange = computed(() => {
                 v-else-if="selectedAccount?.platform === 'youtube'"
                 :account-id="selectedAccountId"
                 :date-range="dateRange"
+            />
+
+            <TelegramAnalytics
+                v-else-if="selectedAccount?.platform === 'telegram'"
+                :account-id="selectedAccountId"
             />
 
             <div v-else class="flex flex-1 items-center justify-center text-sm font-medium text-foreground/60">
