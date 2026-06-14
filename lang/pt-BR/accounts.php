@@ -97,7 +97,6 @@ return [
         'new_code' => 'Gerar um novo código',
         'retry' => 'Tentar novamente',
         'error_generic' => 'Não foi possível iniciar a conexão. Tente novamente.',
-        'close' => 'Fechar',
     ],
 
     'facebook' => [

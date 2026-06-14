@@ -10,7 +10,6 @@ import {
     Dialog,
     DialogContent,
     DialogDescription,
-    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
@@ -123,7 +122,7 @@ onUnmounted(clearExpiry);
     <Dialog v-model:open="open">
         <DialogContent class="sm:max-w-lg">
             <DialogHeader>
-                <div class="flex items-center gap-3">
+                <div class="flex items-start gap-3">
                     <img
                         src="/images/accounts/telegram.png"
                         alt="Telegram"
@@ -239,12 +238,6 @@ onUnmounted(clearExpiry);
                     {{ $t('accounts.telegram.waiting') }}
                 </div>
             </div>
-
-            <DialogFooter>
-                <Button variant="outline" @click="open = false">{{
-                    $t('accounts.telegram.close')
-                }}</Button>
-            </DialogFooter>
         </DialogContent>
     </Dialog>
 </template>
