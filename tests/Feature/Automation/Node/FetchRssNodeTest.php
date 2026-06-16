@@ -15,37 +15,11 @@ use Illuminate\Support\Facades\Http;
 
 afterEach(fn () => Carbon::setTestNow());
 
-const FETCH_RSS_OLD = <<<'XML'
-<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0"><channel>
-  <item><title>Ancient</title><link>https://1.1.1.1/1</link><guid>1</guid><pubDate>Mon, 01 Jan 2024 12:00:00 +0000</pubDate></item>
-  <item><title>Old</title><link>https://1.1.1.1/2</link><guid>2</guid><pubDate>Sat, 01 Feb 2025 12:00:00 +0000</pubDate></item>
-</channel></rss>
-XML;
-
-const FETCH_RSS_MIXED = <<<'XML'
-<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0"><channel>
-  <item><title>Older</title><link>https://1.1.1.1/a</link><guid>a</guid><pubDate>Sat, 01 Feb 2025 12:00:00 +0000</pubDate></item>
-  <item><title>Newer1</title><link>https://1.1.1.1/b</link><guid>b</guid><pubDate>Sun, 01 Jun 2025 12:00:00 +0000</pubDate></item>
-  <item><title>Newer2</title><link>https://1.1.1.1/c</link><guid>c</guid><pubDate>Sun, 15 Jun 2025 12:00:00 +0000</pubDate></item>
-</channel></rss>
-XML;
-
-const FETCH_RSS_THREE_NEW = <<<'XML'
-<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0"><channel>
-  <item><title>New1</title><link>https://1.1.1.1/x</link><guid>x</guid><pubDate>Sun, 01 Jun 2025 12:00:00 +0000</pubDate></item>
-  <item><title>New2</title><link>https://1.1.1.1/y</link><guid>y</guid><pubDate>Mon, 02 Jun 2025 12:00:00 +0000</pubDate></item>
-  <item><title>New3</title><link>https://1.1.1.1/z</link><guid>z</guid><pubDate>Tue, 03 Jun 2025 12:00:00 +0000</pubDate></item>
-</channel></rss>
-XML;
-
 beforeEach(fn () => Bus::fake());
 
 it('first execution dispatches nothing and stores watermark from newest item', function () {
     Carbon::setTestNow('2026-01-15 10:00:00');
-    Http::fake(['1.1.1.1/*' => Http::response(FETCH_RSS_OLD, 200)]);
+    Http::fake(['1.1.1.1/*' => Http::response(feedFixture('rss_old'), 200)]);
 
     $automation = Automation::factory()->active()->create([
         'nodes' => [
@@ -74,7 +48,7 @@ it('first execution dispatches nothing and stores watermark from newest item', f
 
 it('processes the first new item on the current run and spawns siblings for the rest', function () {
     Carbon::setTestNow('2026-01-15 10:00:00');
-    Http::fake(['1.1.1.1/*' => Http::response(FETCH_RSS_MIXED, 200)]);
+    Http::fake(['1.1.1.1/*' => Http::response(feedFixture('rss_mixed'), 200)]);
 
     $automation = Automation::factory()->active()->create([
         'nodes' => [
@@ -111,7 +85,7 @@ it('processes the first new item on the current run and spawns siblings for the 
 
 it('spawns sibling runs down the item edge for each remaining new item', function () {
     Carbon::setTestNow('2026-01-15 10:00:00');
-    Http::fake(['1.1.1.1/*' => Http::response(FETCH_RSS_THREE_NEW, 200)]);
+    Http::fake(['1.1.1.1/*' => Http::response(feedFixture('rss_three_new'), 200)]);
 
     $automation = Automation::factory()->active()->create([
         'nodes' => [
@@ -151,7 +125,7 @@ it('spawns sibling runs down the item edge for each remaining new item', functio
 
 it('fans every spawned item out across all branches wired to the fetch node', function () {
     Carbon::setTestNow('2026-01-15 10:00:00');
-    Http::fake(['1.1.1.1/*' => Http::response(FETCH_RSS_THREE_NEW, 200)]);
+    Http::fake(['1.1.1.1/*' => Http::response(feedFixture('rss_three_new'), 200)]);
 
     $automation = Automation::factory()->active()->create([
         'nodes' => [
@@ -185,7 +159,7 @@ it('fans every spawned item out across all branches wired to the fetch node', fu
 
 it('does not persist the production watermark on a manual real-data test', function () {
     Carbon::setTestNow('2026-01-15 10:00:00');
-    Http::fake(['1.1.1.1/*' => Http::response(FETCH_RSS_MIXED, 200)]);
+    Http::fake(['1.1.1.1/*' => Http::response(feedFixture('rss_mixed'), 200)]);
 
     $automation = Automation::factory()->active()->create([
         'nodes' => [
@@ -226,7 +200,7 @@ it('does not persist the production watermark on a manual real-data test', funct
 
 it('advances the production watermark on a non-manual real-data run', function () {
     Carbon::setTestNow('2026-01-15 10:00:00');
-    Http::fake(['1.1.1.1/*' => Http::response(FETCH_RSS_MIXED, 200)]);
+    Http::fake(['1.1.1.1/*' => Http::response(feedFixture('rss_mixed'), 200)]);
 
     $automation = Automation::factory()->active()->create([
         'nodes' => [
@@ -261,7 +235,7 @@ it('advances the production watermark on a non-manual real-data run', function (
 
 it('processes an Atom feed (YouTube) that the old RSS-only parser dropped', function () {
     Carbon::setTestNow('2026-06-16 10:00:00');
-    Http::fake(['1.1.1.1/*' => Http::response(file_get_contents(base_path('tests/fixtures/feeds/youtube_atom.xml')), 200)]);
+    Http::fake(['1.1.1.1/*' => Http::response(feedFixture('youtube_atom'), 200)]);
 
     $automation = Automation::factory()->active()->create();
 
@@ -317,14 +291,7 @@ it('fails on a malformed RSS feed', function () {
 
 it('skips items without a publish date', function () {
     Carbon::setTestNow('2026-01-15 10:00:00');
-    $feed = <<<'XML'
-    <?xml version="1.0" encoding="UTF-8"?>
-    <rss version="2.0"><channel>
-      <item><title>Dated</title><link>https://1.1.1.1/d</link><guid>d</guid><pubDate>Sun, 01 Jun 2025 12:00:00 +0000</pubDate></item>
-      <item><title>NoDate</title><link>https://1.1.1.1/n</link><guid>n</guid></item>
-    </channel></rss>
-    XML;
-    Http::fake(['1.1.1.1/*' => Http::response($feed, 200)]);
+    Http::fake(['1.1.1.1/*' => Http::response(feedFixture('rss_dateless'), 200)]);
 
     $automation = Automation::factory()->active()->create();
     AutomationNodeState::create([
@@ -343,13 +310,7 @@ it('skips items without a publish date', function () {
 
 it('falls back to the link as the dedup key when an item has no guid', function () {
     Carbon::setTestNow('2026-01-15 10:00:00');
-    $feed = <<<'XML'
-    <?xml version="1.0" encoding="UTF-8"?>
-    <rss version="2.0"><channel>
-      <item><title>LinkKey</title><link>https://1.1.1.1/only-link</link><pubDate>Sun, 01 Jun 2025 12:00:00 +0000</pubDate></item>
-    </channel></rss>
-    XML;
-    Http::fake(['1.1.1.1/*' => Http::response($feed, 200)]);
+    Http::fake(['1.1.1.1/*' => Http::response(feedFixture('rss_no_guid'), 200)]);
 
     $automation = Automation::factory()->active()->create();
     AutomationNodeState::create([

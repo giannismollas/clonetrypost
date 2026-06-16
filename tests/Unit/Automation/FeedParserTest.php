@@ -4,11 +4,6 @@ declare(strict_types=1);
 
 use App\Services\Automation\FeedParser;
 
-function feedFixture(string $name): string
-{
-    return file_get_contents(base_path("tests/fixtures/feeds/{$name}.xml"));
-}
-
 beforeEach(function () {
     $this->parser = new FeedParser;
 });

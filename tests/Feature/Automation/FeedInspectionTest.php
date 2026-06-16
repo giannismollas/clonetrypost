@@ -16,7 +16,7 @@ beforeEach(function () {
 });
 
 it('returns the discovered fields for a feed', function () {
-    Http::fake(['1.1.1.1/*' => Http::response(file_get_contents(base_path('tests/fixtures/feeds/youtube_atom.xml')), 200)]);
+    Http::fake(['1.1.1.1/*' => Http::response(feedFixture('youtube_atom'), 200)]);
 
     $automation = Automation::factory()->for($this->workspace)->create();
 
@@ -35,7 +35,7 @@ it('returns the discovered fields for a feed', function () {
 });
 
 it('resolves workspace variables in the feed url before fetching', function () {
-    Http::fake(['1.1.1.1/*' => Http::response(file_get_contents(base_path('tests/fixtures/feeds/youtube_atom.xml')), 200)]);
+    Http::fake(['1.1.1.1/*' => Http::response(feedFixture('youtube_atom'), 200)]);
 
     $automation = Automation::factory()->for($this->workspace)->create([
         'variables' => [['key' => 'HOST', 'value' => '1.1.1.1']],
