@@ -139,7 +139,41 @@ test('throws when a subreddit has no title', function () {
     expect(fn () => app(RedditPublisher::class)->publish($platform))->toThrow(RedditPublishException::class);
 });
 
-test('throws on media types since upload is not yet supported', function () {
-    $platform = redditPlatform([['name' => 'test', 'title' => 'T', 'type' => 'image']]);
-    expect(fn () => app(RedditPublisher::class)->publish($platform))->toThrow(RedditPublishException::class);
+test('throws for video and gallery since they are not yet supported', function () {
+    foreach (['video', 'gallery'] as $type) {
+        $platform = redditPlatform([['name' => 'test', 'title' => 'T', 'type' => $type]]);
+        expect(fn () => app(RedditPublisher::class)->publish($platform))->toThrow(RedditPublishException::class);
+    }
+});
+
+test('uploads an image then submits the asset url', function () {
+    test()->post->update([
+        'media' => [[
+            'id' => 'm1',
+            'path' => 'media/2026-01/photo.jpg',
+            'url' => 'https://cdn.test/photo.jpg',
+            'mime_type' => 'image/jpeg',
+            'original_filename' => 'photo.jpg',
+        ]],
+    ]);
+
+    Http::fake([
+        'https://oauth.reddit.com/api/media/asset*' => Http::response([
+            'args' => [
+                'action' => '//reddit-uploads.s3.amazonaws.com',
+                'fields' => [['name' => 'key', 'value' => 'abc/photo.jpg'], ['name' => 'policy', 'value' => 'p']],
+            ],
+            'asset' => ['asset_id' => 'a1'],
+        ], 200),
+        'https://reddit-uploads.s3.amazonaws.com' => Http::response('<?xml version="1.0"?><PostResponse><Location>https://reddit-uploads.s3.amazonaws.com/abc/photo.jpg</Location></PostResponse>', 201),
+        'https://cdn.test/photo.jpg' => Http::response('binarybytes', 200),
+        'https://oauth.reddit.com/api/submit*' => Http::response(['json' => ['errors' => [], 'data' => ['name' => 't3_img', 'id' => 'img']]], 200),
+        'https://oauth.reddit.com/api/info*' => Http::response(['data' => ['children' => []]], 200),
+    ]);
+
+    $platform = redditPlatform([['name' => 'pics', 'title' => 'My photo', 'type' => 'image']]);
+    $result = app(RedditPublisher::class)->publish($platform);
+
+    expect($result['id'])->toContain('img');
+    Http::assertSent(fn ($r) => str_contains($r->url(), '/api/submit') && isset($r['url']) && str_contains((string) $r['url'], 'photo.jpg'));
 });

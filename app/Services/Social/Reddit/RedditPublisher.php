@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Social\Reddit;
 
+use App\DataTransferObjects\MediaItem;
 use App\Exceptions\Social\ErrorCategory;
 use App\Exceptions\Social\RedditPublishException;
 use App\Models\PostPlatform;
@@ -12,6 +13,7 @@ use App\Services\Social\Concerns\HasSocialHttpClient;
 use App\Services\Social\ContentSanitizer;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Http;
 use Throwable;
 
 /**
@@ -26,6 +28,8 @@ class RedditPublisher
     use HasSocialHttpClient;
 
     private const SUBMIT_DELAY_MICROSECONDS = 1_100_000;
+
+    private ?MediaItem $currentMedia = null;
 
     public function __construct(private readonly RedditClient $client) {}
 
@@ -50,6 +54,8 @@ class RedditPublisher
         $text = $postPlatform->post->content
             ? app(ContentSanitizer::class)->sanitize($postPlatform->post->content, $postPlatform->platform)
             : '';
+
+        $this->currentMedia = $postPlatform->post->mediaItems->first();
 
         /** @var list<array{subreddit: string, id: string, url: string}> $results */
         $results = [];
@@ -132,14 +138,62 @@ class RedditPublisher
     }
 
     /**
+     * Uploads the post's first image through Reddit's asset lease and returns the
+     * hosted URL to submit as a link/image post.
+     *
      * @param  array<string, mixed>  $sub
      */
     private function uploadMedia(SocialAccount $account, array $sub): string
     {
-        throw new RedditPublishException(
-            userMessage: 'Reddit media upload is not available yet.',
+        $type = (string) data_get($sub, 'type');
+
+        if ($type !== 'image') {
+            throw new RedditPublishException(
+                userMessage: 'Reddit video and gallery posts are not supported yet.',
+                category: ErrorCategory::MediaFormat,
+            );
+        }
+
+        $item = $this->currentMedia ?? throw new RedditPublishException(
+            userMessage: 'No image attached for this Reddit image post.',
             category: ErrorCategory::MediaFormat,
         );
+
+        $mime = (string) ($item->mime_type ?: 'image/jpeg');
+        $filename = $item->original_filename ?: (basename((string) $item->path) ?: 'image');
+
+        $lease = $this->reddit($account)->asForm()->post($this->url('/api/media/asset'), [
+            'filepath' => $filename,
+            'mimetype' => $mime,
+        ]);
+        $this->assertOk($lease);
+
+        $action = 'https:'.preg_replace('#^https?:#', '', (string) data_get($lease->json(), 'args.action'));
+        $fields = collect((array) data_get($lease->json(), 'args.fields'))
+            ->mapWithKeys(fn ($f) => [(string) data_get($f, 'name') => (string) data_get($f, 'value')])
+            ->all();
+
+        $bytes = Http::timeout(120)->get($item->url)->body();
+
+        $upload = Http::asMultipart();
+        foreach ($fields as $name => $value) {
+            $upload = $upload->attach($name, $value);
+        }
+        $upload = $upload->attach('file', $bytes, $filename);
+        $s3 = $upload->post($action);
+
+        if ($s3->failed()) {
+            throw new RedditPublishException(
+                userMessage: 'Failed to upload the image to Reddit.',
+                category: ErrorCategory::MediaFormat,
+            );
+        }
+
+        if (preg_match('/<Location>(.*?)<\/Location>/', $s3->body(), $m)) {
+            return html_entity_decode($m[1]);
+        }
+
+        return rtrim($action, '/').'/'.($fields['key'] ?? $filename);
     }
 
     private function resolveUrl(SocialAccount $account, string $fullname): string
@@ -156,8 +210,6 @@ class RedditPublisher
         return match ($type) {
             'link' => 'link',
             'image' => 'image',
-            'video' => 'video',
-            'gallery' => 'gallery',
             default => 'self',
         };
     }

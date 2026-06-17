@@ -54,7 +54,7 @@ class RedditClient
         };
 
         if ($allowImages) {
-            $allowedTypes = array_merge($allowedTypes, ['image', 'video', 'gallery']);
+            $allowedTypes[] = 'image';
         }
 
         $flairRequired = (bool) data_get(

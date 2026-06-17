@@ -54,6 +54,19 @@ test('restrictions reports submission type, image allowance and required flair',
         ->and($restrictions['flairs'][0]['id'])->toBe('abc');
 });
 
+test('restrictions adds image (not video or gallery) when images are allowed', function () {
+    Http::fake([
+        'https://oauth.reddit.com/r/pics/about*' => Http::response(['data' => ['submission_type' => 'any', 'allow_images' => true]], 200),
+        'https://oauth.reddit.com/api/v1/pics/post_requirements*' => Http::response(['is_flair_required' => false], 200),
+        'https://oauth.reddit.com/r/pics/api/link_flair_v2*' => Http::response([], 200),
+    ]);
+
+    $r = app(RedditClient::class)->restrictions($this->account, 'pics');
+
+    expect($r['allowed_types'])->toContain('self')->toContain('link')->toContain('image')
+        ->not->toContain('video')->not->toContain('gallery');
+});
+
 test('info sums nothing for empty fullnames and maps children otherwise', function () {
     Http::fake([
         'https://oauth.reddit.com/api/info*' => Http::response([
