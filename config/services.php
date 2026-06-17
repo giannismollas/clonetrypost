@@ -118,6 +118,13 @@ return [
         'redirect' => env('DISCORD_CLIENT_REDIRECT'),
     ],
 
+    // Reddit
+    'reddit' => [
+        'client_id' => env('REDDIT_CLIENT_ID'),
+        'client_secret' => env('REDDIT_CLIENT_SECRET'),
+        'redirect' => env('REDDIT_CLIENT_REDIRECT'),
+    ],
+
     'gtm' => [
         'id' => env('GTM_ID'),
     ],

@@ -176,6 +176,13 @@ return [
             'permissions' => env('DISCORD_PERMISSIONS', '248832'),
             'scopes' => array_values(array_filter(array_map('trim', explode(',', (string) env('DISCORD_SCOPES', 'bot,identify,guilds'))))),
         ],
+        'reddit' => [
+            'enabled' => env('REDDIT_ENABLED', true),
+            'api' => env('REDDIT_API', 'https://oauth.reddit.com'),
+            'oauth_api' => env('REDDIT_OAUTH_API', 'https://www.reddit.com/api/v1'),
+            'user_agent' => env('REDDIT_USER_AGENT', 'web:it.trypost:1.0 (by /u/trypost)'),
+            'scopes' => array_values(array_filter(array_map('trim', explode(',', (string) env('REDDIT_SCOPES', 'identity,read,submit,flair,mysubreddits'))))),
+        ],
     ],
 
 ];
