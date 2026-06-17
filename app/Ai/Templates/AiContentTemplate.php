@@ -1,0 +1,60 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Ai\Templates;
+
+use Illuminate\Contracts\JsonSchema\JsonSchema;
+
+interface AiContentTemplate
+{
+    /** Stable key used in the request + registry, e.g. 'image_card'. */
+    public function key(): string;
+
+    /** i18n key for the gallery label. */
+    public function name(): string;
+
+    /** i18n key for the gallery description. */
+    public function description(): string;
+
+    /** Public path to the preview thumbnail shown in the picker. */
+    public function previewAsset(): string;
+
+    /** Whether a social account must be selected for this template. */
+    public function needsAccount(): bool;
+
+    /**
+     * Content types (by value) this template can produce. Empty = all AI formats.
+     *
+     * @return array<int, string>
+     */
+    public function supportedFormats(): array;
+
+    /** The 'format' string passed to the generator agent (e.g. 'single'). */
+    public function generatorFormat(): string;
+
+    /** The Blade view path for the generator prompt. */
+    public function promptView(): string;
+
+    /**
+     * The structured-output schema for the generator.
+     *
+     * @return array<string, mixed>
+     */
+    public function schema(JsonSchema $schema, TemplateContext $context): array;
+
+    /**
+     * Text fields (by structured-output key) the humanizer should rewrite.
+     * Empty = skip humanization.
+     *
+     * @return array<string, string>
+     */
+    public function humanizableFields(): array;
+
+    /**
+     * Build the post from the (humanized) structured output.
+     *
+     * @param  array<string, mixed>  $structured
+     */
+    public function assemble(array $structured, TemplateContext $context): GeneratedPost;
+}
