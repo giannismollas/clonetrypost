@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Models\SocialAccount;
 use App\Models\Workspace;
 use App\Services\Social\Reddit\RedditClient;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 
 beforeEach(function () {
@@ -65,6 +66,50 @@ test('restrictions adds image (not video or gallery) when images are allowed', f
 
     expect($r['allowed_types'])->toContain('self')->toContain('link')->toContain('image')
         ->not->toContain('video')->not->toContain('gallery');
+});
+
+test('restrictions returns only link type when submission_type is link and images not allowed', function () {
+    Http::fake([
+        'https://oauth.reddit.com/r/AnnounceOnly/about*' => Http::response([
+            'data' => ['submission_type' => 'link', 'allow_images' => false],
+        ], 200),
+        'https://oauth.reddit.com/api/v1/AnnounceOnly/post_requirements*' => Http::response([
+            'is_flair_required' => false,
+        ], 200),
+        'https://oauth.reddit.com/r/AnnounceOnly/api/link_flair_v2*' => Http::response([], 200),
+    ]);
+
+    $r = app(RedditClient::class)->restrictions($this->account, 'AnnounceOnly');
+
+    expect($r['allowed_types'])->toBe(['link'])
+        ->not->toContain('self')
+        ->not->toContain('image');
+});
+
+test('flairs returns empty array when the flair endpoint throws a connection exception', function () {
+    Http::fake([
+        'https://oauth.reddit.com/r/AskReddit/api/link_flair_v2*' => fn () => throw new ConnectionException('Connection refused'),
+    ]);
+
+    $flairs = app(RedditClient::class)->flairs($this->account, 'AskReddit');
+
+    expect($flairs)->toBe([]);
+});
+
+test('restrictions returns empty flairs array when the flair endpoint throws a connection exception', function () {
+    Http::fake([
+        'https://oauth.reddit.com/r/AskReddit/about*' => Http::response([
+            'data' => ['submission_type' => 'any', 'allow_images' => false],
+        ], 200),
+        'https://oauth.reddit.com/api/v1/AskReddit/post_requirements*' => Http::response([
+            'is_flair_required' => true,
+        ], 200),
+        'https://oauth.reddit.com/r/AskReddit/api/link_flair_v2*' => fn () => throw new ConnectionException('Connection refused'),
+    ]);
+
+    $r = app(RedditClient::class)->restrictions($this->account, 'AskReddit');
+
+    expect($r['flairs'])->toBe([]);
 });
 
 test('info sums nothing for empty fullnames and maps children otherwise', function () {

@@ -35,6 +35,19 @@ test('throws TokenExpiredException when reddit verify returns 401', function () 
         ->toThrow(TokenExpiredException::class, 'Reddit access token is invalid or expired');
 });
 
+test('throws TokenExpiredException when reddit verify returns 403', function () {
+    Http::fake([
+        config('trypost.platforms.reddit.api').'/api/v1/me' => Http::response([], 403),
+    ]);
+
+    $account = SocialAccount::factory()->reddit()->create([
+        'token_expires_at' => now()->addDays(30),
+    ]);
+
+    expect(fn () => (new ConnectionVerifier)->verify($account))
+        ->toThrow(TokenExpiredException::class, 'Reddit access token is invalid or expired');
+});
+
 test('refreshing a reddit token stores the new access token', function () {
     Http::fake([
         config('trypost.platforms.reddit.oauth_api').'/access_token' => Http::response([

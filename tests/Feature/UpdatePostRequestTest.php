@@ -585,3 +585,64 @@ test('saving a discord draft without a channel is allowed', function () {
         ])
         ->assertSessionDoesntHaveErrors('platforms.0.meta.channel_id');
 });
+
+test('publishing a reddit post with empty subreddits is rejected', function () {
+    $account = SocialAccount::factory()->reddit()->create(['workspace_id' => $this->workspace->id]);
+    $postPlatform = PostPlatform::factory()->reddit()->create([
+        'post_id' => $this->post->id,
+        'social_account_id' => $account->id,
+        'meta' => ['subreddits' => []],
+    ]);
+
+    $this->actingAs($this->user)
+        ->put(route('app.posts.update', $this->post), [
+            'status' => Status::Publishing->value,
+            'platforms' => [[
+                'id' => $postPlatform->id,
+                'content_type' => ContentType::RedditPost->value,
+                'meta' => ['subreddits' => []],
+            ]],
+        ])
+        ->assertSessionHasErrors('platforms.0.meta.subreddits');
+});
+
+test('scheduling a reddit post with empty subreddits is rejected', function () {
+    $account = SocialAccount::factory()->reddit()->create(['workspace_id' => $this->workspace->id]);
+    $postPlatform = PostPlatform::factory()->reddit()->create([
+        'post_id' => $this->post->id,
+        'social_account_id' => $account->id,
+        'meta' => ['subreddits' => []],
+    ]);
+
+    $this->actingAs($this->user)
+        ->put(route('app.posts.update', $this->post), [
+            'status' => Status::Scheduled->value,
+            'scheduled_at' => now()->addDay()->toIso8601String(),
+            'platforms' => [[
+                'id' => $postPlatform->id,
+                'content_type' => ContentType::RedditPost->value,
+                'meta' => ['subreddits' => []],
+            ]],
+        ])
+        ->assertSessionHasErrors('platforms.0.meta.subreddits');
+});
+
+test('saving a reddit post as draft without subreddits is allowed', function () {
+    $account = SocialAccount::factory()->reddit()->create(['workspace_id' => $this->workspace->id]);
+    $postPlatform = PostPlatform::factory()->reddit()->create([
+        'post_id' => $this->post->id,
+        'social_account_id' => $account->id,
+        'meta' => ['subreddits' => []],
+    ]);
+
+    $this->actingAs($this->user)
+        ->put(route('app.posts.update', $this->post), [
+            'status' => Status::Draft->value,
+            'platforms' => [[
+                'id' => $postPlatform->id,
+                'content_type' => ContentType::RedditPost->value,
+                'meta' => ['subreddits' => []],
+            ]],
+        ])
+        ->assertSessionDoesntHaveErrors('platforms.0.meta.subreddits');
+});

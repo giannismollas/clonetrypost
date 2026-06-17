@@ -149,3 +149,18 @@ test('reddit post content type maps to reddit platform', function () {
     expect(ContentType::RedditPost->value)->toBe('reddit_post')
         ->and(ContentType::RedditPost->platform())->toBe(Platform::Reddit);
 });
+
+test('reddit post supports image but not video', function () {
+    expect(ContentType::RedditPost->supportsImage())->toBeTrue()
+        ->and(ContentType::RedditPost->supportsVideo())->toBeFalse();
+});
+
+test('default content type for Reddit is RedditPost', function () {
+    expect(ContentType::defaultFor(Platform::Reddit))->toBe(ContentType::RedditPost);
+});
+
+test('forPlatform Reddit contains RedditPost', function () {
+    $types = ContentType::forPlatform(Platform::Reddit);
+
+    expect($types)->toContain(ContentType::RedditPost);
+});

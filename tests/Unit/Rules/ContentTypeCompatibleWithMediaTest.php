@@ -97,3 +97,16 @@ test('detects media type from mime when type field is missing', function () {
 test('does nothing for invalid content type values', function () {
     expect(runMediaRule('not_a_real_content_type', []))->toBe([]);
 });
+
+test('reddit text post with no media passes the rule', function () {
+    expect(runMediaRule(ContentType::RedditPost->value, []))->toBe([]);
+});
+
+test('reddit post with a video is rejected', function () {
+    $media = [['type' => MediaType::Video->value, 'mime_type' => 'video/mp4']];
+
+    $errors = runMediaRule(ContentType::RedditPost->value, $media);
+
+    expect($errors)->toHaveCount(1)
+        ->and($errors[0])->toContain('does not support videos');
+});

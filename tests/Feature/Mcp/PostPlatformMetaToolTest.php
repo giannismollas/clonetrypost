@@ -222,3 +222,66 @@ test('publish post rejects a Reddit platform without a subreddit', function () {
 
     $response->assertHasErrors([__('posts.form.reddit.subreddit_required')]);
 });
+
+test('publish post rejects a Reddit platform where a subreddit has a blank title', function () {
+    $account = SocialAccount::factory()->reddit()->create(['workspace_id' => $this->workspace->id]);
+
+    $post = Post::factory()->create([
+        'workspace_id' => $this->workspace->id,
+        'user_id' => $this->user->id,
+        'status' => PostStatus::Draft,
+    ]);
+    PostPlatform::factory()->reddit()->create([
+        'post_id' => $post->id,
+        'social_account_id' => $account->id,
+        'enabled' => true,
+        'meta' => ['subreddits' => [['name' => 'AskReddit', 'title' => '', 'type' => 'self']]],
+    ]);
+
+    $response = TryPostServer::actingAs($this->user)
+        ->tool(PublishPostTool::class, ['post_id' => $post->id]);
+
+    $response->assertHasErrors([__('posts.form.reddit.title_required')]);
+});
+
+test('publish post rejects a Reddit link platform with no url', function () {
+    $account = SocialAccount::factory()->reddit()->create(['workspace_id' => $this->workspace->id]);
+
+    $post = Post::factory()->create([
+        'workspace_id' => $this->workspace->id,
+        'user_id' => $this->user->id,
+        'status' => PostStatus::Draft,
+    ]);
+    PostPlatform::factory()->reddit()->create([
+        'post_id' => $post->id,
+        'social_account_id' => $account->id,
+        'enabled' => true,
+        'meta' => ['subreddits' => [['name' => 'AskReddit', 'title' => 'My Link', 'type' => 'link', 'url' => null]]],
+    ]);
+
+    $response = TryPostServer::actingAs($this->user)
+        ->tool(PublishPostTool::class, ['post_id' => $post->id]);
+
+    $response->assertHasErrors([__('posts.form.reddit.url_required')]);
+});
+
+test('publish post rejects a Reddit platform where flair is required but missing', function () {
+    $account = SocialAccount::factory()->reddit()->create(['workspace_id' => $this->workspace->id]);
+
+    $post = Post::factory()->create([
+        'workspace_id' => $this->workspace->id,
+        'user_id' => $this->user->id,
+        'status' => PostStatus::Draft,
+    ]);
+    PostPlatform::factory()->reddit()->create([
+        'post_id' => $post->id,
+        'social_account_id' => $account->id,
+        'enabled' => true,
+        'meta' => ['subreddits' => [['name' => 'AskReddit', 'title' => 'My Post', 'type' => 'self', 'flair_required' => true]]],
+    ]);
+
+    $response = TryPostServer::actingAs($this->user)
+        ->tool(PublishPostTool::class, ['post_id' => $post->id]);
+
+    $response->assertHasErrors([__('posts.form.reddit.flair_required')]);
+});

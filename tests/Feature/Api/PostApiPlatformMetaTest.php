@@ -195,3 +195,60 @@ it('rejects publishing a Reddit post with no subreddit', function () {
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['platforms.0.meta.subreddits']);
 });
+
+it('rejects publishing a Reddit post where a subreddit has a blank title', function () {
+    $account = SocialAccount::factory()->reddit()->create(['workspace_id' => $this->workspace->id]);
+    $post = Post::factory()->create(['workspace_id' => $this->workspace->id, 'user_id' => $this->user->id]);
+    $platform = PostPlatform::factory()->reddit()->create([
+        'post_id' => $post->id,
+        'social_account_id' => $account->id,
+        'enabled' => true,
+        'meta' => ['subreddits' => [['name' => 'AskReddit', 'title' => '', 'type' => 'self']]],
+    ]);
+
+    $this->withHeaders($this->headers)
+        ->putJson(route('api.posts.update', $post), [
+            'status' => PostStatus::Publishing->value,
+            'platforms' => [['id' => $platform->id]],
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['platforms.0.meta.subreddits']);
+});
+
+it('rejects publishing a Reddit link post with no url', function () {
+    $account = SocialAccount::factory()->reddit()->create(['workspace_id' => $this->workspace->id]);
+    $post = Post::factory()->create(['workspace_id' => $this->workspace->id, 'user_id' => $this->user->id]);
+    $platform = PostPlatform::factory()->reddit()->create([
+        'post_id' => $post->id,
+        'social_account_id' => $account->id,
+        'enabled' => true,
+        'meta' => ['subreddits' => [['name' => 'AskReddit', 'title' => 'My Link', 'type' => 'link', 'url' => null]]],
+    ]);
+
+    $this->withHeaders($this->headers)
+        ->putJson(route('api.posts.update', $post), [
+            'status' => PostStatus::Publishing->value,
+            'platforms' => [['id' => $platform->id]],
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['platforms.0.meta.subreddits']);
+});
+
+it('rejects publishing a Reddit post where flair is required but missing', function () {
+    $account = SocialAccount::factory()->reddit()->create(['workspace_id' => $this->workspace->id]);
+    $post = Post::factory()->create(['workspace_id' => $this->workspace->id, 'user_id' => $this->user->id]);
+    $platform = PostPlatform::factory()->reddit()->create([
+        'post_id' => $post->id,
+        'social_account_id' => $account->id,
+        'enabled' => true,
+        'meta' => ['subreddits' => [['name' => 'AskReddit', 'title' => 'My Post', 'type' => 'self', 'flair_required' => true]]],
+    ]);
+
+    $this->withHeaders($this->headers)
+        ->putJson(route('api.posts.update', $post), [
+            'status' => PostStatus::Publishing->value,
+            'platforms' => [['id' => $platform->id]],
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['platforms.0.meta.subreddits']);
+});

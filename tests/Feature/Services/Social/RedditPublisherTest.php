@@ -146,6 +146,42 @@ test('throws for video and gallery since they are not yet supported', function (
     }
 });
 
+test('throws when an image post has no media attached', function () {
+    $platform = redditPlatform([['name' => 'pics', 'title' => 'My photo', 'type' => 'image']]);
+
+    expect(fn () => app(RedditPublisher::class)->publish($platform))
+        ->toThrow(RedditPublishException::class);
+});
+
+test('throws when s3 upload returns a non-2xx status', function () {
+    test()->post->update([
+        'media' => [[
+            'id' => 'm2',
+            'path' => 'media/2026-01/photo.jpg',
+            'url' => 'https://cdn.test/photo.jpg',
+            'mime_type' => 'image/jpeg',
+            'original_filename' => 'photo.jpg',
+        ]],
+    ]);
+
+    Http::fake([
+        'https://oauth.reddit.com/api/media/asset*' => Http::response([
+            'args' => [
+                'action' => '//reddit-uploads.s3.amazonaws.com',
+                'fields' => [['name' => 'key', 'value' => 'abc/photo.jpg']],
+            ],
+            'asset' => ['asset_id' => 'a1'],
+        ], 200),
+        'https://cdn.test/photo.jpg' => Http::response('binarybytes', 200),
+        'https://reddit-uploads.s3.amazonaws.com' => Http::response('Forbidden', 403),
+    ]);
+
+    $platform = redditPlatform([['name' => 'pics', 'title' => 'My photo', 'type' => 'image']]);
+
+    expect(fn () => app(RedditPublisher::class)->publish($platform))
+        ->toThrow(RedditPublishException::class, 'Failed to upload the image to Reddit.');
+});
+
 test('uploads an image then submits the asset url', function () {
     test()->post->update([
         'media' => [[
