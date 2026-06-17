@@ -59,7 +59,7 @@ class RedditProvider extends AbstractProvider implements ProviderInterface
             ],
         ]);
 
-        return json_decode((string) $response->getBody(), true);
+        return (array) json_decode((string) $response->getBody(), true);
     }
 
     /**

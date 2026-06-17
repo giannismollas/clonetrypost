@@ -18,7 +18,7 @@ beforeEach(function () {
 });
 
 test('post metrics sum score and comments across subreddits', function () {
-    Http::fake(['https://oauth.reddit.com/api/info*' => Http::response(['data' => ['children' => [
+    Http::fake([config('trypost.platforms.reddit.api').'/api/info*' => Http::response(['data' => ['children' => [
         ['data' => ['name' => 't3_one', 'score' => 10, 'num_comments' => 3]],
         ['data' => ['name' => 't3_two', 'score' => 5, 'num_comments' => 2]],
     ]]], 200)]);
@@ -36,7 +36,7 @@ test('post metrics sum score and comments across subreddits', function () {
 });
 
 test('account metrics expose total karma', function () {
-    Http::fake(['https://oauth.reddit.com/api/v1/me*' => Http::response(['total_karma' => 1234, 'link_karma' => 1000, 'comment_karma' => 234], 200)]);
+    Http::fake([config('trypost.platforms.reddit.api').'/api/v1/me*' => Http::response(['total_karma' => 1234, 'link_karma' => 1000, 'comment_karma' => 234], 200)]);
 
     $metrics = app(RedditAnalytics::class)->getMetrics($this->account);
 
@@ -53,7 +53,7 @@ test('post metrics return empty when platform_post_id is blank', function () {
 });
 
 test('post metrics return empty when info API returns no children', function () {
-    Http::fake(['https://oauth.reddit.com/api/info*' => Http::response(['data' => ['children' => []]], 200)]);
+    Http::fake([config('trypost.platforms.reddit.api').'/api/info*' => Http::response(['data' => ['children' => []]], 200)]);
 
     $platform = PostPlatform::factory()->reddit()->create([
         'social_account_id' => $this->account->id,
@@ -64,7 +64,7 @@ test('post metrics return empty when info API returns no children', function () 
 });
 
 test('account metrics return empty when me API throws a connection exception', function () {
-    Http::fake(['https://oauth.reddit.com/api/v1/me*' => fn () => throw new ConnectionException('timeout')]);
+    Http::fake([config('trypost.platforms.reddit.api').'/api/v1/me*' => fn () => throw new ConnectionException('timeout')]);
 
     $account = SocialAccount::factory()->reddit()->create(['workspace_id' => $this->account->workspace_id]);
 

@@ -30,7 +30,7 @@ class RedditAnalytics
         }
 
         return [
-            ['label' => __('analytics.metrics.karma'), 'value' => $karma['total_karma']],
+            ['label' => __('analytics.metrics.karma'), 'value' => data_get($karma, 'total_karma', 0)],
         ];
     }
 

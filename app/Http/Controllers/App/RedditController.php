@@ -23,7 +23,11 @@ class RedditController extends Controller
         $query = trim((string) $request->query('q', ''));
 
         return response()->json([
-            'data' => $query === '' ? [] : $this->client->searchSubreddits($account, $query),
+            'data' => $query === '' ? [] : rescue(
+                fn () => $this->client->searchSubreddits($account, $query),
+                [],
+                report: false,
+            ),
         ]);
     }
 
@@ -31,7 +35,13 @@ class RedditController extends Controller
     {
         $this->authorizeRedditAccount($request, $account);
 
-        return response()->json(['data' => $this->client->restrictions($account, $subreddit)]);
+        return response()->json([
+            'data' => rescue(
+                fn () => $this->client->restrictions($account, $subreddit),
+                ['allowed_types' => ['self', 'link', 'image'], 'flair_required' => false, 'flairs' => []],
+                report: false,
+            ),
+        ]);
     }
 
     private function authorizeRedditAccount(Request $request, SocialAccount $account): void
