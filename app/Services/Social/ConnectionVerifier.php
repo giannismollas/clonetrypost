@@ -543,7 +543,7 @@ class ConnectionVerifier
     private function verifyReddit(SocialAccount $account): bool
     {
         $response = Http::withToken((string) $account->access_token)
-            ->withHeaders(['User-Agent' => (string) config('trypost.platforms.reddit.user_agent')])
+            ->withHeaders(['User-Agent' => (string) config('app.user_agent')])
             ->get(config('trypost.platforms.reddit.api').'/api/v1/me');
 
         if (in_array($response->status(), [401, 403], true)) {
@@ -561,7 +561,7 @@ class ConnectionVerifier
 
         $response = TokenRefreshClient::for(Platform::Reddit)->send(fn () => Http::asForm()
             ->withBasicAuth((string) config('services.reddit.client_id'), (string) config('services.reddit.client_secret'))
-            ->withHeaders(['User-Agent' => (string) config('trypost.platforms.reddit.user_agent')])
+            ->withHeaders(['User-Agent' => (string) config('app.user_agent')])
             ->post(config('trypost.platforms.reddit.oauth_api').'/access_token', [
                 'grant_type' => 'refresh_token',
                 'refresh_token' => $account->refresh_token,

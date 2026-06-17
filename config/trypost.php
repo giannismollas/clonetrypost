@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-$userAgent = env('TRYPOST_USER_AGENT', 'TryPost.it/1.0 (+https://trypost.it)');
-
 return [
 
     /*
@@ -60,19 +58,6 @@ return [
     | Disable this if you don't have Google OAuth credentials configured.
     |
     */
-
-    /*
-    |--------------------------------------------------------------------------
-    | Outbound User-Agent
-    |--------------------------------------------------------------------------
-    |
-    | Branded User-Agent applied to outbound HTTP from automation nodes
-    | (webhook + http_request) so recipients know the request came from
-    | TryPost.it. Self-hosters can override it.
-    |
-    */
-
-    'user_agent' => $userAgent,
 
     'google_auth_enabled' => env('GOOGLE_AUTH_ENABLED', false),
 
@@ -182,7 +167,6 @@ return [
             'enabled' => env('REDDIT_ENABLED', true),
             'api' => env('REDDIT_API', 'https://oauth.reddit.com'),
             'oauth_api' => env('REDDIT_OAUTH_API', 'https://www.reddit.com/api/v1'),
-            'user_agent' => env('REDDIT_USER_AGENT', $userAgent),
             'scopes' => array_values(array_filter(array_map('trim', explode(',', (string) env('REDDIT_SCOPES', 'identity,read,submit,flair,mysubreddits'))))),
         ],
     ],

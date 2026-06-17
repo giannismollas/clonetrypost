@@ -71,6 +71,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Outbound User-Agent
+    |--------------------------------------------------------------------------
+    |
+    | Single, branded User-Agent for every outbound HTTP request the app makes
+    | (automation webhook/http nodes, social provider APIs, etc.). Centralized
+    | here so there is one source of truth; self-hosters can override it.
+    |
+    */
+
+    'user_agent' => env('TRYPOST_USER_AGENT', 'TryPost.it/1.0 (+https://trypost.it)'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

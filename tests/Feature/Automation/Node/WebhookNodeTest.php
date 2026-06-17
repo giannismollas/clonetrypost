@@ -42,7 +42,7 @@ it('sends the branded user-agent header', function () {
         'payload_template' => '{}',
     ]);
 
-    Http::assertSent(fn ($request) => $request->hasHeader('User-Agent', config('trypost.user_agent')));
+    Http::assertSent(fn ($request) => $request->hasHeader('User-Agent', config('app.user_agent')));
 });
 
 it('escapes special characters in templated payload values so the JSON stays valid', function () {

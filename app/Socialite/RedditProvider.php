@@ -50,7 +50,7 @@ class RedditProvider extends AbstractProvider implements ProviderInterface
             'auth' => [config('services.reddit.client_id'), config('services.reddit.client_secret')],
             'headers' => [
                 'Accept' => 'application/json',
-                'User-Agent' => config('trypost.platforms.reddit.user_agent'),
+                'User-Agent' => config('app.user_agent'),
             ],
             'form_params' => [
                 'grant_type' => 'authorization_code',
@@ -70,7 +70,7 @@ class RedditProvider extends AbstractProvider implements ProviderInterface
         $response = $this->getHttpClient()->get(config('trypost.platforms.reddit.api').'/api/v1/me', [
             'headers' => [
                 'Authorization' => "Bearer {$token}",
-                'User-Agent' => config('trypost.platforms.reddit.user_agent'),
+                'User-Agent' => config('app.user_agent'),
             ],
         ]);
 

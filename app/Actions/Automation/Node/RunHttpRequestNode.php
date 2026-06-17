@@ -364,7 +364,7 @@ class RunHttpRequestNode
             $request = $request->withHeaders($headers);
         }
 
-        return $request->withUserAgent(config('trypost.user_agent'));
+        return $request->withUserAgent(config('app.user_agent'));
     }
 
     /**

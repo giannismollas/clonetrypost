@@ -277,7 +277,7 @@ it('sends the branded user-agent header', function () {
         'headers' => ['User-Agent' => 'user-supplied-agent'],
     ]);
 
-    Http::assertSent(fn ($request) => $request->hasHeader('User-Agent', config('trypost.user_agent')));
+    Http::assertSent(fn ($request) => $request->hasHeader('User-Agent', config('app.user_agent')));
 });
 
 it('sends custom headers configured in the editor', function () {

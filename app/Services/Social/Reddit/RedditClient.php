@@ -135,6 +135,6 @@ class RedditClient
     {
         return $this->socialHttp()
             ->withToken((string) $account->access_token)
-            ->withHeaders(['User-Agent' => (string) config('trypost.platforms.reddit.user_agent')]);
+            ->withHeaders(['User-Agent' => (string) config('app.user_agent')]);
     }
 }

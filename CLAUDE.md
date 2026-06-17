@@ -338,8 +338,7 @@ Vue components must have a single root element.
 
 ## HTTP User-Agent
 
-- NEVER hardcode a custom `User-Agent` string for outbound HTTP. There is ONE shared default: `config('trypost.user_agent')` (`env('TRYPOST_USER_AGENT', ...)`). Use it for any outbound request that needs a UA.
-    - If a provider REQUIRES its own UA (e.g. Reddit's API mandates a unique descriptive User-Agent), add a per-platform key under `config/trypost.php` `platforms.<name>.user_agent` that DEFAULTS to the shared one — `env('<PLATFORM>_USER_AGENT', $userAgent)` where `$userAgent` is the hoisted shared value — never a fresh hardcoded literal.
+- NEVER hardcode a `User-Agent` string for outbound HTTP, and NEVER add a per-platform or per-feature user-agent config key. There is ONE source of truth: `config('app.user_agent')` (backed by `env('TRYPOST_USER_AGENT', ...)` in `config/app.php`). Every outbound request that needs a UA — automation webhook/http nodes, social provider APIs (Reddit, etc.), anything — reads `config('app.user_agent')`.
 
 ## TryPost.it Documentation
 

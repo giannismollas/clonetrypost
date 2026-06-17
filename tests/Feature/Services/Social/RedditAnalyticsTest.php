@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Http;
 beforeEach(function () {
     config([
         'trypost.platforms.reddit.api' => 'https://oauth.reddit.com',
-        'trypost.platforms.reddit.user_agent' => 'web:it.trypost:1.0',
+        'app.user_agent' => 'web:it.trypost:1.0',
     ]);
     $this->account = SocialAccount::factory()->reddit()->create(['workspace_id' => Workspace::factory()->create()->id]);
 });

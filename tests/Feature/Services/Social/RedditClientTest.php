@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Http;
 beforeEach(function () {
     config([
         'trypost.platforms.reddit.api' => 'https://oauth.reddit.com',
-        'trypost.platforms.reddit.user_agent' => 'web:it.trypost:1.0',
+        'app.user_agent' => 'web:it.trypost:1.0',
     ]);
     $this->account = SocialAccount::factory()->reddit()->create([
         'workspace_id' => Workspace::factory()->create()->id,
@@ -33,6 +33,8 @@ test('searchSubreddits returns names from the reddit search endpoint', function 
 
     expect($results)->toHaveCount(2)
         ->and($results[0]['name'])->toBe('AskReddit');
+
+    Http::assertSent(fn ($request) => $request->hasHeader('User-Agent', config('app.user_agent')));
 });
 
 test('restrictions reports submission type, image allowance and required flair', function () {
