@@ -706,7 +706,7 @@ class TemplateImageGenerator
         $fontMedium = $this->fontPath('Inter-Medium.ttf');
         $fontLight = $this->fontPath('Inter-Light.ttf');
 
-        $avatarSize = 56;
+        $avatarSize = 72;
         $headerH = $avatarSize + 2 * $cardPadding;
         $nameSize = 28;
         $handleSize = 22;
@@ -747,7 +747,7 @@ class TemplateImageGenerator
         }
 
         $nameX = $avatarX + $avatarSize + 16;
-        $nameY = $avatarY + 4;
+        $nameY = $avatarY + 11;
 
         $displayNameText = $socialAccount->display_name ?? '';
         $nameBox = $fontBold ? imagettfbbox($nameSize, 0, $fontBold, $displayNameText) : [0, 0, 0, 0, 0, 0, 0, 0];
