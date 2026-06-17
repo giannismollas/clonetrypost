@@ -88,19 +88,16 @@ watch(
             rowIds.value.push(nextId());
         }
     },
+    { immediate: true },
 );
 
-const idFor = (index: number): string => {
-    if (!rowIds.value[index]) {
-        rowIds.value[index] = nextId();
-    }
-    return rowIds.value[index];
-};
+const idFor = (index: number): string => rowIds.value[index] ?? '';
 
 const removeRow = (index: number) => {
     const removedId = rowIds.value[index];
     rowIds.value = rowIds.value.filter((_, i) => i !== index);
-    // Drop the removed row's state from all per-row dicts.
+    clearTimeout(searchTimers[removedId]);
+    delete searchTimers[removedId];
     delete rowFlairs.value[removedId];
     delete searchQueries.value[removedId];
     delete searchResults.value[removedId];
