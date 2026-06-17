@@ -29,6 +29,7 @@ test('throws TokenExpiredException when reddit verify returns 401', function () 
 
     $account = SocialAccount::factory()->reddit()->create([
         'token_expires_at' => now()->addDays(30),
+        'refresh_token' => null,
     ]);
 
     expect(fn () => (new ConnectionVerifier)->verify($account))
@@ -42,6 +43,7 @@ test('throws TokenExpiredException when reddit verify returns 403', function () 
 
     $account = SocialAccount::factory()->reddit()->create([
         'token_expires_at' => now()->addDays(30),
+        'refresh_token' => null,
     ]);
 
     expect(fn () => (new ConnectionVerifier)->verify($account))

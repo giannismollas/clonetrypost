@@ -46,8 +46,8 @@ function redditPlatform(array $subreddits): PostPlatform
 
 test('publishes a self post and resolves the url via info', function () {
     Http::fake([
-        'https://oauth.reddit.com/api/submit*' => Http::response(['json' => ['errors' => [], 'data' => ['name' => 't3_abc', 'id' => 'abc']]], 200),
-        'https://oauth.reddit.com/api/info*' => Http::response(['data' => ['children' => [
+        config('trypost.platforms.reddit.api').'/api/submit*' => Http::response(['json' => ['errors' => [], 'data' => ['name' => 't3_abc', 'id' => 'abc']]], 200),
+        config('trypost.platforms.reddit.api').'/api/info*' => Http::response(['data' => ['children' => [
             ['data' => ['name' => 't3_abc', 'url' => 'https://www.reddit.com/r/test/comments/abc/x/']],
         ]]], 200),
     ]);
@@ -61,8 +61,8 @@ test('publishes a self post and resolves the url via info', function () {
 
 test('submits a link post with the url', function () {
     Http::fake([
-        'https://oauth.reddit.com/api/submit*' => Http::response(['json' => ['errors' => [], 'data' => ['name' => 't3_l', 'id' => 'l']]], 200),
-        'https://oauth.reddit.com/api/info*' => Http::response(['data' => ['children' => []]], 200),
+        config('trypost.platforms.reddit.api').'/api/submit*' => Http::response(['json' => ['errors' => [], 'data' => ['name' => 't3_l', 'id' => 'l']]], 200),
+        config('trypost.platforms.reddit.api').'/api/info*' => Http::response(['data' => ['children' => []]], 200),
     ]);
 
     $platform = redditPlatform([['name' => 'test', 'title' => 'T', 'type' => 'link', 'url' => 'https://example.com']]);
@@ -73,10 +73,10 @@ test('submits a link post with the url', function () {
 
 test('submits to multiple subreddits and aggregates ids', function () {
     Http::fake([
-        'https://oauth.reddit.com/api/submit*' => Http::sequence()
+        config('trypost.platforms.reddit.api').'/api/submit*' => Http::sequence()
             ->push(['json' => ['errors' => [], 'data' => ['name' => 't3_one', 'id' => 'one']]])
             ->push(['json' => ['errors' => [], 'data' => ['name' => 't3_two', 'id' => 'two']]]),
-        'https://oauth.reddit.com/api/info*' => Http::response(['data' => ['children' => []]], 200),
+        config('trypost.platforms.reddit.api').'/api/info*' => Http::response(['data' => ['children' => []]], 200),
     ]);
 
     $platform = redditPlatform([
@@ -90,10 +90,10 @@ test('submits to multiple subreddits and aggregates ids', function () {
 
 test('records partial failure when a later subreddit fails', function () {
     Http::fake([
-        'https://oauth.reddit.com/api/submit*' => Http::sequence()
+        config('trypost.platforms.reddit.api').'/api/submit*' => Http::sequence()
             ->push(['json' => ['errors' => [], 'data' => ['name' => 't3_one', 'id' => 'one']]])
             ->push(['json' => ['errors' => [['SUBREDDIT_NOEXIST', 'that subreddit does not exist', 'sr']]]], 200),
-        'https://oauth.reddit.com/api/info*' => Http::response(['data' => ['children' => []]], 200),
+        config('trypost.platforms.reddit.api').'/api/info*' => Http::response(['data' => ['children' => []]], 200),
     ]);
 
     $platform = redditPlatform([
@@ -112,8 +112,8 @@ test('throws when no subreddit is configured', function () {
 
 test('sends nsfw, spoiler and flair fields in the payload', function () {
     Http::fake([
-        'https://oauth.reddit.com/api/submit*' => Http::response(['json' => ['errors' => [], 'data' => ['name' => 't3_abc', 'id' => 'abc']]], 200),
-        'https://oauth.reddit.com/api/info*' => Http::response(['data' => ['children' => []]], 200),
+        config('trypost.platforms.reddit.api').'/api/submit*' => Http::response(['json' => ['errors' => [], 'data' => ['name' => 't3_abc', 'id' => 'abc']]], 200),
+        config('trypost.platforms.reddit.api').'/api/info*' => Http::response(['data' => ['children' => []]], 200),
     ]);
 
     $platform = redditPlatform([[
@@ -165,7 +165,7 @@ test('throws when s3 upload returns a non-2xx status', function () {
     ]);
 
     Http::fake([
-        'https://oauth.reddit.com/api/media/asset*' => Http::response([
+        config('trypost.platforms.reddit.api').'/api/media/asset*' => Http::response([
             'args' => [
                 'action' => '//reddit-uploads.s3.amazonaws.com',
                 'fields' => [['name' => 'key', 'value' => 'abc/photo.jpg']],
@@ -194,7 +194,7 @@ test('uploads an image then submits the asset url', function () {
     ]);
 
     Http::fake([
-        'https://oauth.reddit.com/api/media/asset*' => Http::response([
+        config('trypost.platforms.reddit.api').'/api/media/asset*' => Http::response([
             'args' => [
                 'action' => '//reddit-uploads.s3.amazonaws.com',
                 'fields' => [['name' => 'key', 'value' => 'abc/photo.jpg'], ['name' => 'policy', 'value' => 'p']],
@@ -203,8 +203,8 @@ test('uploads an image then submits the asset url', function () {
         ], 200),
         'https://reddit-uploads.s3.amazonaws.com' => Http::response('<?xml version="1.0"?><PostResponse><Location>https://reddit-uploads.s3.amazonaws.com/abc/photo.jpg</Location></PostResponse>', 201),
         'https://cdn.test/photo.jpg' => Http::response('binarybytes', 200),
-        'https://oauth.reddit.com/api/submit*' => Http::response(['json' => ['errors' => [], 'data' => ['name' => 't3_img', 'id' => 'img']]], 200),
-        'https://oauth.reddit.com/api/info*' => Http::response(['data' => ['children' => []]], 200),
+        config('trypost.platforms.reddit.api').'/api/submit*' => Http::response(['json' => ['errors' => [], 'data' => ['name' => 't3_img', 'id' => 'img']]], 200),
+        config('trypost.platforms.reddit.api').'/api/info*' => Http::response(['data' => ['children' => []]], 200),
     ]);
 
     $platform = redditPlatform([['name' => 'pics', 'title' => 'My photo', 'type' => 'image']]);

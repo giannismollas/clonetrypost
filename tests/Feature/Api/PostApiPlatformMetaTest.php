@@ -209,10 +209,15 @@ it('rejects publishing a Reddit post where a subreddit has a blank title', funct
     $this->withHeaders($this->headers)
         ->putJson(route('api.posts.update', $post), [
             'status' => PostStatus::Publishing->value,
-            'platforms' => [['id' => $platform->id]],
+            'platforms' => [[
+                'id' => $platform->id,
+                'meta' => ['subreddits' => [['name' => 'AskReddit', 'title' => '', 'type' => 'self']]],
+            ]],
         ])
         ->assertUnprocessable()
-        ->assertJsonValidationErrors(['platforms.0.meta.subreddits']);
+        ->assertJsonValidationErrors([
+            'platforms.0.meta.subreddits' => __('posts.form.reddit.title_required'),
+        ]);
 });
 
 it('rejects publishing a Reddit link post with no url', function () {
@@ -228,10 +233,15 @@ it('rejects publishing a Reddit link post with no url', function () {
     $this->withHeaders($this->headers)
         ->putJson(route('api.posts.update', $post), [
             'status' => PostStatus::Publishing->value,
-            'platforms' => [['id' => $platform->id]],
+            'platforms' => [[
+                'id' => $platform->id,
+                'meta' => ['subreddits' => [['name' => 'AskReddit', 'title' => 'My Link', 'type' => 'link']]],
+            ]],
         ])
         ->assertUnprocessable()
-        ->assertJsonValidationErrors(['platforms.0.meta.subreddits']);
+        ->assertJsonValidationErrors([
+            'platforms.0.meta.subreddits' => __('posts.form.reddit.url_required'),
+        ]);
 });
 
 it('rejects publishing a Reddit post where flair is required but missing', function () {
@@ -247,8 +257,13 @@ it('rejects publishing a Reddit post where flair is required but missing', funct
     $this->withHeaders($this->headers)
         ->putJson(route('api.posts.update', $post), [
             'status' => PostStatus::Publishing->value,
-            'platforms' => [['id' => $platform->id]],
+            'platforms' => [[
+                'id' => $platform->id,
+                'meta' => ['subreddits' => [['name' => 'AskReddit', 'title' => 'My Post', 'type' => 'self', 'flair_required' => true]]],
+            ]],
         ])
         ->assertUnprocessable()
-        ->assertJsonValidationErrors(['platforms.0.meta.subreddits']);
+        ->assertJsonValidationErrors([
+            'platforms.0.meta.subreddits' => __('posts.form.reddit.flair_required'),
+        ]);
 });

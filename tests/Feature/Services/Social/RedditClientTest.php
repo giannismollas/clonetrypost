@@ -21,7 +21,7 @@ beforeEach(function () {
 
 test('searchSubreddits returns names from the reddit search endpoint', function () {
     Http::fake([
-        'https://oauth.reddit.com/subreddits/search*' => Http::response([
+        config('trypost.platforms.reddit.api').'/subreddits/search*' => Http::response([
             'data' => ['children' => [
                 ['data' => ['display_name' => 'AskReddit', 'title' => 'Ask Reddit', 'subscribers' => 100, 'over18' => false, 'subreddit_type' => 'public']],
                 ['data' => ['display_name' => 'pics', 'title' => 'Pics', 'subscribers' => 50, 'over18' => false, 'subreddit_type' => 'public']],
@@ -37,13 +37,13 @@ test('searchSubreddits returns names from the reddit search endpoint', function 
 
 test('restrictions reports submission type, image allowance and required flair', function () {
     Http::fake([
-        'https://oauth.reddit.com/r/AskReddit/about*' => Http::response([
+        config('trypost.platforms.reddit.api').'/r/AskReddit/about*' => Http::response([
             'data' => ['submission_type' => 'self', 'allow_images' => false],
         ], 200),
-        'https://oauth.reddit.com/api/v1/AskReddit/post_requirements*' => Http::response([
+        config('trypost.platforms.reddit.api').'/api/v1/AskReddit/post_requirements*' => Http::response([
             'is_flair_required' => true,
         ], 200),
-        'https://oauth.reddit.com/r/AskReddit/api/link_flair_v2*' => Http::response([
+        config('trypost.platforms.reddit.api').'/r/AskReddit/api/link_flair_v2*' => Http::response([
             ['id' => 'abc', 'text' => 'Discussion'],
         ], 200),
     ]);
@@ -57,9 +57,9 @@ test('restrictions reports submission type, image allowance and required flair',
 
 test('restrictions adds image (not video or gallery) when images are allowed', function () {
     Http::fake([
-        'https://oauth.reddit.com/r/pics/about*' => Http::response(['data' => ['submission_type' => 'any', 'allow_images' => true]], 200),
-        'https://oauth.reddit.com/api/v1/pics/post_requirements*' => Http::response(['is_flair_required' => false], 200),
-        'https://oauth.reddit.com/r/pics/api/link_flair_v2*' => Http::response([], 200),
+        config('trypost.platforms.reddit.api').'/r/pics/about*' => Http::response(['data' => ['submission_type' => 'any', 'allow_images' => true]], 200),
+        config('trypost.platforms.reddit.api').'/api/v1/pics/post_requirements*' => Http::response(['is_flair_required' => false], 200),
+        config('trypost.platforms.reddit.api').'/r/pics/api/link_flair_v2*' => Http::response([], 200),
     ]);
 
     $r = app(RedditClient::class)->restrictions($this->account, 'pics');
@@ -70,13 +70,13 @@ test('restrictions adds image (not video or gallery) when images are allowed', f
 
 test('restrictions returns only link type when submission_type is link and images not allowed', function () {
     Http::fake([
-        'https://oauth.reddit.com/r/AnnounceOnly/about*' => Http::response([
+        config('trypost.platforms.reddit.api').'/r/AnnounceOnly/about*' => Http::response([
             'data' => ['submission_type' => 'link', 'allow_images' => false],
         ], 200),
-        'https://oauth.reddit.com/api/v1/AnnounceOnly/post_requirements*' => Http::response([
+        config('trypost.platforms.reddit.api').'/api/v1/AnnounceOnly/post_requirements*' => Http::response([
             'is_flair_required' => false,
         ], 200),
-        'https://oauth.reddit.com/r/AnnounceOnly/api/link_flair_v2*' => Http::response([], 200),
+        config('trypost.platforms.reddit.api').'/r/AnnounceOnly/api/link_flair_v2*' => Http::response([], 200),
     ]);
 
     $r = app(RedditClient::class)->restrictions($this->account, 'AnnounceOnly');
@@ -88,7 +88,7 @@ test('restrictions returns only link type when submission_type is link and image
 
 test('flairs returns empty array when the flair endpoint throws a connection exception', function () {
     Http::fake([
-        'https://oauth.reddit.com/r/AskReddit/api/link_flair_v2*' => fn () => throw new ConnectionException('Connection refused'),
+        config('trypost.platforms.reddit.api').'/r/AskReddit/api/link_flair_v2*' => fn () => throw new ConnectionException('Connection refused'),
     ]);
 
     $flairs = app(RedditClient::class)->flairs($this->account, 'AskReddit');
@@ -98,13 +98,13 @@ test('flairs returns empty array when the flair endpoint throws a connection exc
 
 test('restrictions returns empty flairs array when the flair endpoint throws a connection exception', function () {
     Http::fake([
-        'https://oauth.reddit.com/r/AskReddit/about*' => Http::response([
+        config('trypost.platforms.reddit.api').'/r/AskReddit/about*' => Http::response([
             'data' => ['submission_type' => 'any', 'allow_images' => false],
         ], 200),
-        'https://oauth.reddit.com/api/v1/AskReddit/post_requirements*' => Http::response([
+        config('trypost.platforms.reddit.api').'/api/v1/AskReddit/post_requirements*' => Http::response([
             'is_flair_required' => true,
         ], 200),
-        'https://oauth.reddit.com/r/AskReddit/api/link_flair_v2*' => fn () => throw new ConnectionException('Connection refused'),
+        config('trypost.platforms.reddit.api').'/r/AskReddit/api/link_flair_v2*' => fn () => throw new ConnectionException('Connection refused'),
     ]);
 
     $r = app(RedditClient::class)->restrictions($this->account, 'AskReddit');
@@ -114,7 +114,7 @@ test('restrictions returns empty flairs array when the flair endpoint throws a c
 
 test('info sums nothing for empty fullnames and maps children otherwise', function () {
     Http::fake([
-        'https://oauth.reddit.com/api/info*' => Http::response([
+        config('trypost.platforms.reddit.api').'/api/info*' => Http::response([
             'data' => ['children' => [
                 ['data' => ['name' => 't3_abc', 'score' => 12, 'num_comments' => 4, 'url' => 'https://www.reddit.com/r/x/comments/abc/y/']],
             ]],
