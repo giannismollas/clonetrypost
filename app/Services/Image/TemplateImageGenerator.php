@@ -747,13 +747,21 @@ class TemplateImageGenerator
         }
 
         $nameX = $avatarX + $avatarSize + 16;
-        $nameY = $avatarY + 11;
 
         $displayNameText = $socialAccount->display_name ?? '';
+        $handleText = '@'.($socialAccount->username ?? '');
         $nameBox = $fontBold ? imagettfbbox($nameSize, 0, $fontBold, $displayNameText) : [0, 0, 0, 0, 0, 0, 0, 0];
+        $handleBox = $fontLight ? imagettfbbox($handleSize, 0, $fontLight, $handleText) : [0, 0, 0, 0, 0, 0, 0, 0];
         $nameWidth = abs($nameBox[2] - $nameBox[0]);
         $nameAscent = (int) round(abs($nameBox[7]));
+        $handleAscent = (int) round(abs($handleBox[7]));
+
+        // Vertically center the two-line (name + handle) block against the avatar.
+        $handleSpacing = (int) round($nameSize * 1.4);
+        $blockHeight = $handleSpacing + $handleAscent;
+        $nameY = $avatarY + (int) round(($avatarSize - $blockHeight) / 2);
         $nameBaselineY = $nameY + $nameAscent;
+        $handleBaselineY = $nameY + $handleSpacing + $handleAscent;
 
         if ($fontBold && $displayNameText !== '') {
             $this->drawTextAt($core, $displayNameText, $fontBold, $nameSize, '#0f1419', $nameX, $nameBaselineY);
@@ -779,12 +787,8 @@ class TemplateImageGenerator
             }
         }
 
-        $handleText = '@'.($socialAccount->username ?? '');
-        $handleBox = $fontLight ? imagettfbbox($handleSize, 0, $fontLight, $handleText) : [0, 0, 0, 0, 0, 0, 0, 0];
-        $handleAscent = (int) round(abs($handleBox[7]));
-        $handleY = $nameY + (int) round($nameSize * 1.4);
         if ($fontLight && $socialAccount->username) {
-            $this->drawTextAt($core, $handleText, $fontLight, $handleSize, '#536471', $nameX, $handleY + $handleAscent);
+            $this->drawTextAt($core, $handleText, $fontLight, $handleSize, '#536471', $nameX, $handleBaselineY);
         }
 
         $bodyStartY = $cardY + $headerH + 8;
