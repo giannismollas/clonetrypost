@@ -51,6 +51,7 @@ class PostAiCreateController extends Controller
             imageCount: (int) $request->input('image_count', 0),
             prompt: $request->string('prompt')->toString(),
             date: $request->input('date'),
+            template: $request->input('template', 'image_card'),
         );
 
         return response()->json([
