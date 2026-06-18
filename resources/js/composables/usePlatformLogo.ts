@@ -13,6 +13,7 @@ const PLATFORM_LOGOS: Record<string, string> = {
     mastodon: '/images/accounts/mastodon.png',
     telegram: '/images/accounts/telegram.png',
     discord: '/images/accounts/discord.png',
+    reddit: '/images/accounts/reddit.png',
 };
 
 const PLATFORM_LABELS: Record<string, string> = {
@@ -30,6 +31,7 @@ const PLATFORM_LABELS: Record<string, string> = {
     mastodon: 'Mastodon',
     telegram: 'Telegram',
     discord: 'Discord',
+    reddit: 'Reddit',
 };
 
 const PLATFORM_CONTENT_TYPES: Record<string, string[]> = {
@@ -51,6 +53,7 @@ const PLATFORM_CONTENT_TYPES: Record<string, string[]> = {
     mastodon: ['mastodon_post'],
     telegram: ['telegram_post'],
     discord: ['discord_message'],
+    reddit: ['reddit_post'],
 };
 
 export interface ContentTypeOption {

@@ -22,6 +22,7 @@ enum Platform: string
     case Mastodon = 'mastodon';
     case Telegram = 'telegram';
     case Discord = 'discord';
+    case Reddit = 'reddit';
 
     public function label(): string
     {
@@ -40,6 +41,7 @@ enum Platform: string
             self::Mastodon => 'Mastodon',
             self::Telegram => 'Telegram',
             self::Discord => 'Discord',
+            self::Reddit => 'Reddit',
         };
     }
 
@@ -59,6 +61,7 @@ enum Platform: string
             self::Mastodon => '#6364FF',
             self::Telegram => '#26A5E4',
             self::Discord => '#5865F2',
+            self::Reddit => '#FF4500',
         };
     }
 
@@ -77,6 +80,7 @@ enum Platform: string
             self::Mastodon => [MediaType::Image, MediaType::Video],
             self::Telegram => [MediaType::Image, MediaType::Video],
             self::Discord => [MediaType::Image, MediaType::Video],
+            self::Reddit => [MediaType::Image],
         };
     }
 
@@ -95,6 +99,7 @@ enum Platform: string
             self::Mastodon => 4,
             self::Telegram => 10,
             self::Discord => 10,
+            self::Reddit => 10,
         };
     }
 
@@ -135,6 +140,7 @@ enum Platform: string
             self::Mastodon => 500,
             self::Telegram => 4096,
             self::Discord => 2000,
+            self::Reddit => 40000,
         };
     }
 
@@ -180,6 +186,7 @@ enum Platform: string
             self::Telegram => 400,
             // Discord — conversational community posts read best when concise
             self::Discord => 280,
+            self::Reddit => 500,
         };
     }
 
@@ -203,6 +210,7 @@ enum Platform: string
             self::Mastodon => ['write:statuses'],
             self::Telegram => [],
             self::Discord => [],
+            self::Reddit => ['submit'],
         };
     }
 
@@ -221,6 +229,7 @@ enum Platform: string
             self::Mastodon => true,
             self::Telegram => true,
             self::Discord => true,
+            self::Reddit => true,
         };
     }
 

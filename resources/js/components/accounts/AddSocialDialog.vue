@@ -109,6 +109,11 @@ const platformTheme: Record<
         rotate: 'rotate-1',
         image: '/images/accounts/discord.png',
     },
+    reddit: {
+        bg: 'bg-orange-200',
+        rotate: '-rotate-1',
+        image: '/images/accounts/reddit.png',
+    },
 };
 
 const themeFor = (value: string) =>

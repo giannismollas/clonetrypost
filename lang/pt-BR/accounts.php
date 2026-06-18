@@ -53,6 +53,7 @@ return [
         'mastodon' => 'Conecte sua conta do Mastodon',
         'telegram' => 'Conecte um canal ou grupo do Telegram',
         'discord' => 'Conecte um servidor do Discord',
+        'reddit' => 'Conecte sua conta do Reddit',
     ],
 
     'disconnect_modal' => [

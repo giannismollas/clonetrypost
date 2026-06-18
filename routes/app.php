@@ -18,6 +18,7 @@ use App\Http\Controllers\App\PostCommentController;
 use App\Http\Controllers\App\PostController;
 use App\Http\Controllers\App\PostTemplateController;
 use App\Http\Controllers\App\PresenceController;
+use App\Http\Controllers\App\RedditController as AppRedditController;
 use App\Http\Controllers\App\Settings\AccountController;
 use App\Http\Controllers\App\Settings\AuthenticationController;
 use App\Http\Controllers\App\Settings\NotificationPreferenceController;
@@ -38,6 +39,7 @@ use App\Http\Controllers\Auth\LinkedInController;
 use App\Http\Controllers\Auth\LinkedInPageController;
 use App\Http\Controllers\Auth\MastodonController;
 use App\Http\Controllers\Auth\PinterestController;
+use App\Http\Controllers\Auth\RedditController;
 use App\Http\Controllers\Auth\SocialController;
 use App\Http\Controllers\Auth\TelegramController;
 use App\Http\Controllers\Auth\ThreadsController;
@@ -125,6 +127,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('connect/discord', [DiscordController::class, 'connect'])->name('app.social.discord.connect');
     Route::get('accounts/discord/callback', [DiscordController::class, 'callback'])->name('app.social.discord.callback');
+
+    Route::get('connect/reddit', [RedditController::class, 'connect'])->name('app.social.reddit.connect');
+    Route::get('accounts/reddit/callback', [RedditController::class, 'callback'])->name('app.social.reddit.callback');
 });
 
 // Routes that require active subscription and completed onboarding
@@ -137,6 +142,14 @@ Route::middleware(['auth', EnsureAccountReady::class])->group(function () {
     Route::get('discord/accounts/{account}/mentions', [AppDiscordController::class, 'mentions'])
         ->middleware('throttle:60,1')
         ->name('app.discord.mentions');
+
+    // Reddit — live lookups for the composer (subreddit typeahead + restrictions/flair).
+    Route::get('reddit/accounts/{account}/subreddits', [AppRedditController::class, 'subreddits'])
+        ->middleware('throttle:60,1')
+        ->name('app.reddit.subreddits');
+    Route::get('reddit/accounts/{account}/subreddits/{subreddit}/restrictions', [AppRedditController::class, 'restrictions'])
+        ->middleware('throttle:60,1')
+        ->name('app.reddit.restrictions');
 
     // Workspaces
     Route::get('workspaces', [WorkspaceController::class, 'index'])->name('app.workspaces.index');

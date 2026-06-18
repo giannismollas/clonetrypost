@@ -73,6 +73,7 @@ test('content type supports video correctly', function () {
     expect(ContentType::YouTubeShort->supportsVideo())->toBeTrue();
     expect(ContentType::LinkedInCarousel->supportsVideo())->toBeFalse();
     expect(ContentType::PinterestPin->supportsVideo())->toBeFalse();
+    expect(ContentType::RedditPost->supportsVideo())->toBeFalse();
 });
 
 test('content type supports image correctly', function () {
@@ -97,6 +98,7 @@ test('content type requires media correctly', function () {
     expect(ContentType::ThreadsPost->requiresMedia())->toBeFalse();
     expect(ContentType::BlueskyPost->requiresMedia())->toBeFalse();
     expect(ContentType::MastodonPost->requiresMedia())->toBeFalse();
+    expect(ContentType::RedditPost->requiresMedia())->toBeFalse();
 });
 
 test('can get content types for platform', function () {
@@ -141,4 +143,24 @@ test('pinterest video pin supports video', function () {
 test('bluesky and mastodon support video', function () {
     expect(ContentType::BlueskyPost->supportsVideo())->toBeTrue();
     expect(ContentType::MastodonPost->supportsVideo())->toBeTrue();
+});
+
+test('reddit post content type maps to reddit platform', function () {
+    expect(ContentType::RedditPost->value)->toBe('reddit_post')
+        ->and(ContentType::RedditPost->platform())->toBe(Platform::Reddit);
+});
+
+test('reddit post supports image but not video', function () {
+    expect(ContentType::RedditPost->supportsImage())->toBeTrue()
+        ->and(ContentType::RedditPost->supportsVideo())->toBeFalse();
+});
+
+test('default content type for Reddit is RedditPost', function () {
+    expect(ContentType::defaultFor(Platform::Reddit))->toBe(ContentType::RedditPost);
+});
+
+test('forPlatform Reddit contains RedditPost', function () {
+    $types = ContentType::forPlatform(Platform::Reddit);
+
+    expect($types)->toContain(ContentType::RedditPost);
 });

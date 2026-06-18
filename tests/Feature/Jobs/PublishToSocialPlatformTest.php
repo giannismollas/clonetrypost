@@ -20,6 +20,7 @@ use App\Models\User;
 use App\Models\Workspace;
 use App\Services\Social\ConnectionVerifier;
 use App\Services\Social\LinkedInPublisher;
+use App\Services\Social\Reddit\RedditPublisher;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Event;
@@ -625,4 +626,29 @@ test('publish to social platform saves error context on token expired', function
     expect($this->postPlatform->error_context)->toBeArray();
     expect($this->postPlatform->error_context['category'])->toBe('token_expired');
     expect($this->postPlatform->error_context['platform_error_code'])->toBe('190');
+});
+
+test('a Reddit PostPlatform is routed to RedditPublisher', function () {
+    Event::fake();
+
+    $redditAccount = SocialAccount::factory()->reddit()->create(['workspace_id' => $this->workspace->id]);
+    $redditPlatform = PostPlatform::factory()->reddit()->create([
+        'post_id' => $this->post->id,
+        'social_account_id' => $redditAccount->id,
+        'enabled' => true,
+    ]);
+
+    $publisher = Mockery::mock(RedditPublisher::class);
+    $publisher->shouldReceive('publish')->once()->andReturn([
+        'id' => 'reddit-123',
+        'url' => 'https://www.reddit.com/r/test/comments/reddit-123/',
+    ]);
+
+    $this->app->instance(RedditPublisher::class, $publisher);
+
+    (new PublishToSocialPlatform($redditPlatform))->handle();
+
+    $redditPlatform->refresh();
+    expect($redditPlatform->status)->toBe(PlatformStatus::Published)
+        ->and($redditPlatform->platform_post_id)->toBe('reddit-123');
 });

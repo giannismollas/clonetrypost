@@ -59,19 +59,6 @@ return [
     |
     */
 
-    /*
-    |--------------------------------------------------------------------------
-    | Outbound User-Agent
-    |--------------------------------------------------------------------------
-    |
-    | Branded User-Agent applied to outbound HTTP from automation nodes
-    | (webhook + http_request) so recipients know the request came from
-    | TryPost.it. Self-hosters can override it.
-    |
-    */
-
-    'user_agent' => env('TRYPOST_USER_AGENT', 'TryPost.it/1.0 (+https://trypost.it)'),
-
     'google_auth_enabled' => env('GOOGLE_AUTH_ENABLED', false),
 
     'github_auth_enabled' => env('GITHUB_AUTH_ENABLED', false),
@@ -175,6 +162,12 @@ return [
             // READ_MESSAGE_HISTORY (1<<16) + MENTION_EVERYONE (1<<17) = 248832.
             'permissions' => env('DISCORD_PERMISSIONS', '248832'),
             'scopes' => array_values(array_filter(array_map('trim', explode(',', (string) env('DISCORD_SCOPES', 'bot,identify,guilds'))))),
+        ],
+        'reddit' => [
+            'enabled' => env('REDDIT_ENABLED', true),
+            'api' => env('REDDIT_API', 'https://oauth.reddit.com'),
+            'oauth_api' => env('REDDIT_OAUTH_API', 'https://www.reddit.com/api/v1'),
+            'scopes' => array_values(array_filter(array_map('trim', explode(',', (string) env('REDDIT_SCOPES', 'identity,read,submit,flair,mysubreddits'))))),
         ],
     ],
 

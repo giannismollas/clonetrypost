@@ -69,8 +69,8 @@ class MediaOptimizer
         file_put_contents($tempFile, (string) $encoded);
 
         // If still above the platform size budget, iteratively shrink DIMENSIONS
-        // (not quality) by 10 % per step until it fits. Postiz-style, preserves
-        // pixel quality while lowering the byte count.
+        // (not quality) by 10 % per step until it fits, preserving pixel quality
+        // while lowering the byte count.
         while (filesize($tempFile) > $maxSize) {
             $newWidth = (int) ($image->width() * 0.9);
             $newHeight = (int) ($image->height() * 0.9);
@@ -205,6 +205,12 @@ class MediaOptimizer
             Platform::Discord => [
                 'max_width' => 2048,
                 'max_size' => 8 * 1024 * 1024,
+                'format' => 'image/jpeg',
+                'quality' => 100,
+            ],
+            Platform::Reddit => [
+                'max_width' => 2048,
+                'max_size' => 20 * 1024 * 1024,
                 'format' => 'image/jpeg',
                 'quality' => 100,
             ],

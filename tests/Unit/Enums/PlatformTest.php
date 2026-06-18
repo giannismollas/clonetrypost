@@ -108,3 +108,17 @@ test('disabled platforms are excluded from enabled list', function () {
 
     expect($enabled)->not->toContain(Platform::LinkedIn);
 });
+
+test('reddit platform exposes its metadata', function () {
+    expect(Platform::Reddit->value)->toBe('reddit')
+        ->and(Platform::Reddit->label())->toBe('Reddit')
+        ->and(Platform::Reddit->color())->toBe('#FF4500')
+        ->and(Platform::Reddit->allowedMediaTypes())->toBe([MediaType::Image])
+        ->and(Platform::Reddit->maxImages())->toBe(10)
+        ->and(Platform::Reddit->maxContentLength())->toBe(40000)
+        ->and(Platform::Reddit->recommendedAiContentLength())->toBe(500)
+        ->and(Platform::Reddit->requiredPublishScopes())->toBe(['submit'])
+        ->and(Platform::Reddit->supportsTextOnly())->toBeTrue()
+        ->and(Platform::Reddit->requiresContent())->toBeFalse()
+        ->and(Platform::Reddit->queue())->toBe('social-reddit');
+});
