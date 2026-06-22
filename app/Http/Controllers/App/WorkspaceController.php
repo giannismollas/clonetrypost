@@ -86,7 +86,7 @@ class WorkspaceController extends Controller
     public function autofillBrand(AutofillBrandRequest $request, AutofillBrand $autofill): JsonResponse
     {
         try {
-            $metadata = $autofill(data_get($request->validated(), 'url'));
+            $metadata = $autofill($request->validated('url'));
         } catch (RuntimeException $e) {
             return response()->json(['message' => $e->getMessage()], SymfonyResponse::HTTP_UNPROCESSABLE_ENTITY);
         }
