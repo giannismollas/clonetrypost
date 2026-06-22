@@ -54,7 +54,6 @@ use Laravel\Cashier\Events\WebhookReceived;
 use Laravel\Nightwatch\Facades\Nightwatch;
 use Laravel\Nightwatch\Records\CacheEvent;
 use Laravel\Passport\Passport;
-use Laravel\Pennant\Feature;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\GoogleProvider;
 use PostHog\PostHog;
@@ -95,10 +94,6 @@ class AppServiceProvider extends ServiceProvider
         Cashier::useSubscriptionModel(Subscription::class);
         Cashier::useSubscriptionItemModel(SubscriptionItem::class);
         Cashier::keepPastDueSubscriptionsActive();
-
-        Feature::resolveScopeUsing(fn () => auth()->user()?->account);
-        Feature::useMorphMap();
-        Feature::discover();
 
         $this->configurePassport();
     }
