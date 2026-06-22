@@ -119,7 +119,6 @@ const workspaceNavItems = computed<NavItem[]>(() => [
         href: accounts.url(),
         icon: IconAffiliate,
     },
-    // Signatures / labels / assets are content-authoring tools (member+ only).
     ...(canCreatePost.value
         ? [
               {

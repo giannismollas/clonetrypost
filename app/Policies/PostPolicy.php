@@ -25,7 +25,8 @@ class PostPolicy
     }
 
     /**
-     * Authorize updating a post. Same workspace-tenancy guard as `view`.
+     * Authorize updating a post: tenancy guard (404 across tenants) then the
+     * role gate — viewers are read-only (403).
      */
     public function update(User $user, Post $post): bool|Response
     {

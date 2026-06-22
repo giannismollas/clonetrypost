@@ -28,14 +28,11 @@ export const useWorkspaceRole = () => {
         isOwner,
         isAdminOrAbove,
         isMemberOrAbove,
-        // member+ (owner/admin/member) — content authoring
         canCreatePost: isMemberOrAbove,
         canManageAutomations: isMemberOrAbove,
-        // admin+ (owner/admin) — workspace administration
         canManageAccounts: isAdminOrAbove,
         canManageTeam: isAdminOrAbove,
         canManageWorkspace: isAdminOrAbove,
-        // owner only
         canManageBilling: isOwner,
         canCreateWorkspace: isOwner,
     };
