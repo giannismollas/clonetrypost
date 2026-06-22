@@ -300,7 +300,6 @@ return [
     'flash' => [
         'account_updated' => 'Conta atualizada com sucesso!',
         'profile_updated' => 'Perfil atualizado com sucesso!',
-        'language_updated' => 'Idioma atualizado com sucesso!',
         'password_updated' => 'Senha atualizada com sucesso!',
         'workspace_updated' => 'Configurações atualizadas com sucesso!',
         'photo_updated' => 'Foto atualizada com sucesso!',
