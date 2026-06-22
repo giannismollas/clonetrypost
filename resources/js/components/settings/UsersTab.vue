@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { router } from '@inertiajs/vue3';
-import { IconClock, IconDots, IconShield, IconTrash, IconUser } from '@tabler/icons-vue';
-import { ref } from 'vue';
+import { router, usePage } from '@inertiajs/vue3';
+import { IconClock, IconDots, IconEye, IconShield, IconTrash, IconUser } from '@tabler/icons-vue';
+import { computed, ref } from 'vue';
 
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.vue';
 import HeadingSmall from '@/components/HeadingSmall.vue';
@@ -39,10 +39,31 @@ interface Invitation {
     role: string;
 }
 
+interface Role {
+    value: string;
+    label: string;
+}
+
 defineProps<{
     members: Member[];
     invitations: Invitation[];
+    roles: Role[];
 }>();
+
+const roleIcon = (role: string) => {
+    if (role === WorkspaceRole.Admin) {
+        return IconShield;
+    }
+
+    if (role === WorkspaceRole.Viewer) {
+        return IconEye;
+    }
+
+    return IconUser;
+};
+
+const page = usePage();
+const currentUserId = computed(() => page.props.auth.user.id);
 
 const inviteDialogOpen = ref(false);
 const removeMemberModal = ref<InstanceType<typeof ConfirmDeleteModal> | null>(null);
@@ -89,7 +110,7 @@ const changeRole = (member: Member, role: string) => {
                         </Badge>
                     </TableCell>
                     <TableCell>
-                        <DropdownMenu>
+                        <DropdownMenu v-if="member.id !== currentUserId">
                             <DropdownMenuTrigger as-child>
                                 <Button variant="outline" size="icon" class="size-8">
                                     <IconDots class="size-4" />
@@ -97,22 +118,16 @@ const changeRole = (member: Member, role: string) => {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                                 <DropdownMenuItem
-                                    v-if="member.role === WorkspaceRole.Member"
-                                    @click="changeRole(member, WorkspaceRole.Admin)"
+                                    v-for="role in roles.filter((r) => r.value !== member.role)"
+                                    :key="role.value"
+                                    @click="changeRole(member, role.value)"
                                 >
-                                    <IconShield class="size-4" />
-                                    {{ $t('settings.members.make_admin') }}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    v-if="member.role === WorkspaceRole.Admin"
-                                    @click="changeRole(member, WorkspaceRole.Member)"
-                                >
-                                    <IconUser class="size-4" />
-                                    {{ $t('settings.members.make_member') }}
+                                    <component :is="roleIcon(role.value)" class="size-4" />
+                                    {{ $t('settings.members.make_role', { role: $t(`settings.members.roles.${role.value}`) }) }}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                     variant="destructive"
-                                    @click="removeMemberModal?.open({ url: removeMemberRoute.url(member.id) })"
+                                    @click="removeMemberModal?.open({ url: removeMemberRoute.url(member.id), confirmText: member.email })"
                                 >
                                     <IconTrash class="size-4" />
                                     {{ $t('settings.members.remove') }}

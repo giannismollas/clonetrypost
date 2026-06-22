@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\UserWorkspace\Role;
 use App\Models\Account;
 use App\Models\Invite;
 use App\Models\User;
@@ -129,6 +130,33 @@ test('accept invite adds user to account and workspaces', function () {
     $invite->refresh();
     expect($invite->accepted_at)->not->toBeNull();
 });
+
+test('accept invite assigns the exact role from the invite', function (Role $role) {
+    $user = User::factory()->create([
+        'email' => 'invitee@example.com',
+    ]);
+
+    $invite = Invite::factory()->create([
+        'account_id' => $this->account->id,
+        'invited_by' => $this->owner->id,
+        'email' => 'invitee@example.com',
+        'workspaces' => [$this->workspace->id],
+        'role' => $role,
+    ]);
+
+    $this->actingAs($user)
+        ->post(route('app.invites.accept', $invite))
+        ->assertRedirect(route('app.calendar'));
+
+    $member = $this->workspace->members()->where('user_id', $user->id)->first();
+
+    expect($member)->not->toBeNull();
+    expect($member->pivot->role)->toBe($role->value);
+})->with([
+    'viewer' => Role::Viewer,
+    'admin' => Role::Admin,
+    'member' => Role::Member,
+]);
 
 test('accept invite fails for wrong email', function () {
     $user = User::factory()->create([

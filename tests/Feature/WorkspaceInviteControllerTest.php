@@ -80,6 +80,27 @@ test('store invite creates invite and sends email', function () {
     Mail::assertQueued(WorkspaceInviteMail::class);
 });
 
+test('store invite requires a role', function () {
+    $response = $this->actingAs($this->user)->post(route('app.invites.store'), [
+        'email' => 'newmember@example.com',
+    ]);
+
+    $response->assertSessionHasErrors('role');
+    $this->assertDatabaseMissing('invites', ['email' => 'newmember@example.com']);
+});
+
+test('store invite persists the chosen role', function () {
+    $this->actingAs($this->user)->post(route('app.invites.store'), [
+        'email' => 'viewer@example.com',
+        'role' => WorkspaceRole::Viewer->value,
+    ]);
+
+    $this->assertDatabaseHas('invites', [
+        'email' => 'viewer@example.com',
+        'role' => WorkspaceRole::Viewer->value,
+    ]);
+});
+
 test('store invite fails if invite already exists', function () {
     Invite::factory()->create([
         'account_id' => $this->account->id,

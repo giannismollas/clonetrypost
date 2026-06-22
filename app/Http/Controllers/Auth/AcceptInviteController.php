@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Auth;
 
-use App\Enums\UserWorkspace\Role;
 use App\Http\Controllers\Controller;
 use App\Models\Invite;
 use App\Models\Workspace;
@@ -25,7 +24,7 @@ class AcceptInviteController extends Controller
         $firstWorkspaceId = collect($invite->workspaces ?? [])->first();
         $workspace = $firstWorkspaceId ? Workspace::find($firstWorkspaceId) : null;
 
-        $role = $invite->role ?? Role::Member;
+        $role = $invite->role;
 
         return Inertia::render('auth/AcceptInvite', [
             'invite' => [
@@ -82,7 +81,7 @@ class AcceptInviteController extends Controller
 
                 if ($workspace && $workspace->account_id === $invite->account_id) {
                     $workspace->members()->syncWithoutDetaching([
-                        $user->id => ['role' => Role::Member->value],
+                        $user->id => ['role' => $invite->role->value],
                     ]);
 
                     // Set first workspace as current

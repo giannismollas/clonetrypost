@@ -14,14 +14,11 @@ class CreateInvite
 {
     public static function execute(Workspace $workspace, array $data): Invite
     {
-        $role = WorkspaceRole::tryFrom((string) data_get($data, 'role', WorkspaceRole::Member->value))
-            ?? WorkspaceRole::Member;
-
         $invite = Invite::create([
             'account_id' => $workspace->account_id,
             'invited_by' => auth()->id(),
             'email' => data_get($data, 'email'),
-            'role' => $role,
+            'role' => WorkspaceRole::from((string) data_get($data, 'role')),
             'workspaces' => [$workspace->id],
         ]);
 

@@ -225,8 +225,7 @@ return [
 
         'cancel' => 'Cancel',
         'remove' => 'Remove',
-        'make_admin' => 'Make admin',
-        'make_member' => 'Make member',
+        'make_role' => 'Make :role',
 
         'invite' => [
             'title' => 'Invite Member',
