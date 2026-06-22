@@ -232,7 +232,7 @@ const handleCreateWorkspace = () => {
             </SidebarMenu>
         </SidebarHeader>
 
-        <SidebarContent class="gap-0.5">
+        <SidebarContent class="gap-px">
             <!-- Create Post Button -->
             <div v-if="currentWorkspace && canCreatePost" class="px-2 py-2">
                 <Link :href="createPost.url()" class="block">
