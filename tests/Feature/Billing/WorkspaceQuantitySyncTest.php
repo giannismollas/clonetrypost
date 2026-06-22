@@ -54,7 +54,6 @@ test('creating a workspace syncs the stripe quantity', function () {
     $user = User::factory()->create();
 
     $account = mock(Account::class)->makePartial();
-    $account->shouldReceive('forgetPlanFeatureCache')->once();
     $account->shouldReceive('syncWorkspaceQuantity')->once();
     $user->setRelation('account', $account);
 
@@ -69,7 +68,6 @@ test('deleting a workspace syncs the stripe quantity', function () {
     ]);
 
     $account = mock(Account::class)->makePartial();
-    $account->shouldReceive('forgetPlanFeatureCache')->once();
     $account->shouldReceive('syncWorkspaceQuantity')->once();
     $workspace->setRelation('account', $account);
 

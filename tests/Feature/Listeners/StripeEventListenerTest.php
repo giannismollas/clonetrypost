@@ -4,16 +4,13 @@ declare(strict_types=1);
 
 use App\Enums\Plan\Slug;
 use App\Enums\PostHog\BillingEvent;
-use App\Features\MonthlyCreditsLimit;
 use App\Jobs\PostHog\TrackBilling;
 use App\Listeners\StripeEventListener;
 use App\Models\Account;
 use App\Models\Plan;
 use App\Models\User;
 use Illuminate\Support\Facades\Bus;
-use Illuminate\Support\Facades\DB;
 use Laravel\Cashier\Events\WebhookReceived;
-use Laravel\Pennant\Feature;
 
 beforeEach(function () {
     config(['services.posthog.enabled' => true, 'services.posthog.api_key' => 'phc_test_key']);
@@ -439,17 +436,11 @@ test('subscription created forwards a null previous plan when account had none',
 // Pennant feature cache invalidation
 // ========================================
 
-test('subscription updated flushes the pennant cache when the plan changes', function () {
+test('subscription updated maps the plan by price id', function () {
     $starter = Plan::query()->where('slug', 'starter')->firstOrFail();
     $pro = Plan::query()->where('slug', 'pro')->firstOrFail();
 
     $this->account->update(['plan_id' => $starter->id]);
-
-    // Prime the Pennant cache.
-    Feature::for($this->account)->value(MonthlyCreditsLimit::class);
-
-    expect(DB::table('features')->where('scope', 'account|'.$this->account->id)->count())
-        ->toBeGreaterThan(0);
 
     $this->listener->handle(new WebhookReceived([
         'type' => 'customer.subscription.updated',
@@ -458,9 +449,6 @@ test('subscription updated flushes the pennant cache when the plan changes', fun
             'items' => ['data' => [['price' => ['id' => 'price_pro_monthly']]]],
         ]],
     ]));
-
-    expect(DB::table('features')->where('scope', 'account|'.$this->account->id)->count())
-        ->toBe(0);
 
     expect($this->account->fresh()->plan_id)->toBe($pro->id);
 });
@@ -480,20 +468,14 @@ test('subscription updated maps an archived legacy plan by price id', function (
     expect($this->account->fresh()->plan_id)->toBe($pro->id);
 });
 
-test('subscription deleted flushes the pennant cache', function () {
+test('subscription deleted clears the plan_id', function () {
     $starter = Plan::query()->where('slug', 'starter')->firstOrFail();
     $this->account->update(['plan_id' => $starter->id]);
-
-    Feature::for($this->account)->value(MonthlyCreditsLimit::class);
-
-    expect(DB::table('features')->where('scope', 'account|'.$this->account->id)->count())
-        ->toBeGreaterThan(0);
 
     $this->listener->handle(new WebhookReceived([
         'type' => 'customer.subscription.deleted',
         'data' => ['object' => ['customer' => 'cus_test123']],
     ]));
 
-    expect(DB::table('features')->where('scope', 'account|'.$this->account->id)->count())
-        ->toBe(0);
+    expect($this->account->fresh()->plan_id)->toBeNull();
 });

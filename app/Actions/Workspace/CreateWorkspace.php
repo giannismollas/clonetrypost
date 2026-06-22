@@ -42,7 +42,6 @@ class CreateWorkspace
             return $workspace;
         });
 
-        $user->account?->forgetPlanFeatureCache();
         $user->account?->syncWorkspaceQuantity();
 
         return $workspace;

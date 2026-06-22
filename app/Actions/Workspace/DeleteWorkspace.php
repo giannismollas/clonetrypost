@@ -20,7 +20,6 @@ class DeleteWorkspace
 
         $workspace->delete();
 
-        $account?->forgetPlanFeatureCache();
         $account?->syncWorkspaceQuantity();
 
         if (PostHogService::isEnabled()) {

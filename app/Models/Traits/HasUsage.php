@@ -4,20 +4,18 @@ declare(strict_types=1);
 
 namespace App\Models\Traits;
 
-use App\Features\MonthlyCreditsLimit;
 use App\Models\Account;
 use App\Models\Invite;
 use App\Models\Post;
 use App\Support\BillingCycle;
 use Illuminate\Support\Facades\Cache;
-use Laravel\Pennant\Feature;
 
 /**
  * Provides account-level usage counts and plan-resolved feature limits.
  *
- * The `featureLimits()` call resolves the Pennant credit feature for the account,
- * which writes to the features cache table on first access. The cache is invalidated
- * explicitly via `Account::forgetPlanFeatureCache()` on plan and workspace changes.
+ * `featureLimits()` resolves the account's per-cycle credit allotment directly
+ * from BillingCycle, computed fresh from the plan, workspace count, and billing
+ * interval — no caching, so there is nothing to invalidate.
  */
 trait HasUsage
 {
@@ -56,7 +54,7 @@ trait HasUsage
     public function featureLimits(): array
     {
         return [
-            'monthlyCreditsLimit' => Feature::for($this)->value(MonthlyCreditsLimit::class),
+            'monthlyCreditsLimit' => BillingCycle::for($this)->creditAllotment(),
         ];
     }
 

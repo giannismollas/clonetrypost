@@ -56,7 +56,6 @@ class StripeEventListener
                 'plan_id' => $plan->id,
                 'trial_ends_at' => null,
             ]);
-            $account->forgetPlanFeatureCache();
         }
 
         $this->trackPlanChange($account, BillingEvent::Created, $previousPlan, $payload);
@@ -71,7 +70,6 @@ class StripeEventListener
 
         if ($plan = $this->resolvePlanFromSubscriptionItems($payload, $account)) {
             $account->update(['plan_id' => $plan->id]);
-            $account->forgetPlanFeatureCache();
         }
 
         $this->trackPlanChange($account, BillingEvent::Updated, $previousPlan, $payload);
@@ -89,7 +87,6 @@ class StripeEventListener
         $previousPlan = $account->plan?->name;
 
         $account->update(['plan_id' => null]);
-        $account->forgetPlanFeatureCache();
 
         $this->trackPlanChange($account, BillingEvent::Cancelled, $previousPlan, $payload);
     }

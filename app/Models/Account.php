@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Features\MonthlyCreditsLimit;
 use App\Models\Traits\HasUsage;
 use Carbon\CarbonInterface;
 use Database\Factories\AccountFactory;
@@ -15,7 +14,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Log;
 use Laravel\Cashier\Billable;
-use Laravel\Pennant\Feature;
 use Throwable;
 
 class Account extends Model
@@ -45,13 +43,6 @@ class Account extends Model
     protected $casts = [
         'trial_ends_at' => 'datetime',
     ];
-
-    public function forgetPlanFeatureCache(): void
-    {
-        Feature::for($this)->forget([
-            MonthlyCreditsLimit::class,
-        ]);
-    }
 
     public function owner(): BelongsTo
     {

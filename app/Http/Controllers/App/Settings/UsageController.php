@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\App\Settings;
 
-use App\Features\MonthlyCreditsLimit;
 use App\Http\Controllers\App\Controller;
 use App\Support\BillingCycle;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use Laravel\Pennant\Feature;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class UsageController extends Controller
@@ -39,7 +37,7 @@ class UsageController extends Controller
                 'socialAccountCount' => $totalSocialAccounts,
                 'memberCount' => $totalMembers,
                 'creditsUsed' => BillingCycle::for($account)->usedCredits(),
-                'monthlyCreditsLimit' => Feature::for($account)->value(MonthlyCreditsLimit::class),
+                'monthlyCreditsLimit' => BillingCycle::for($account)->creditAllotment(),
             ],
         ]);
     }

@@ -143,7 +143,6 @@ class BillingController extends Controller
         }
 
         $subscription->swap($yearlyPriceId);
-        $account->forgetPlanFeatureCache();
 
         return redirect()->route('app.billing.index')
             ->with('flash.success', __('billing.flash.switched_to_yearly'));
