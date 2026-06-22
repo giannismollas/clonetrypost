@@ -14,7 +14,6 @@ import {
     IconFileText,
     IconGift,
     IconHash,
-    IconMessageCircle,
     IconPhoto,
     IconPencil,
     IconPlus,
@@ -149,18 +148,7 @@ const workspaceNavItems = computed<NavItem[]>(() => [
         : []),
 ]);
 
-const openFeedbackChat = () => {
-    const crisp = (window as Window & { $crisp?: { push: (command: unknown[]) => void } }).$crisp;
-    crisp?.push(['do', 'chat:show']);
-    crisp?.push(['do', 'chat:open']);
-};
-
 const supportNavItems = computed(() => [
-    {
-        title: trans('sidebar.support.share_feedback'),
-        icon: IconMessageCircle,
-        action: openFeedbackChat,
-    },
     {
         title: trans('sidebar.support.referral'),
         href: 'https://affiliates.trypost.it/',

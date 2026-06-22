@@ -55,7 +55,6 @@ return [
 
     'support' => [
         'discord' => 'Discord',
-        'share_feedback' => 'Share feedback',
         'last_updates' => 'Last Updates',
         'docs' => 'Documentation',
         'referral' => 'Earn 30% referral',

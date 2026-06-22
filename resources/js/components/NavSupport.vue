@@ -12,8 +12,7 @@ import {
 interface SupportNavItem {
     title: string;
     icon: Component;
-    href?: string;
-    action?: () => void;
+    href: string;
 }
 
 interface Props {
@@ -29,15 +28,7 @@ defineProps<Props>();
         <SidebarGroupLabel>{{ label }}</SidebarGroupLabel>
         <SidebarMenu>
             <SidebarMenuItem v-for="item in items" :key="item.title">
-                <SidebarMenuButton
-                    v-if="item.action"
-                    :tooltip="item.title"
-                    @click="item.action"
-                >
-                    <component :is="item.icon" />
-                    <span>{{ item.title }}</span>
-                </SidebarMenuButton>
-                <SidebarMenuButton v-else as-child :tooltip="item.title">
+                <SidebarMenuButton as-child :tooltip="item.title">
                     <a :href="item.href" target="_blank" rel="noopener noreferrer">
                         <component :is="item.icon" />
                         <span>{{ item.title }}</span>

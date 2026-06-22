@@ -55,7 +55,6 @@ return [
 
     'support' => [
         'discord' => 'Discord',
-        'share_feedback' => 'Enviar feedback',
         'last_updates' => 'Últimas Atualizações',
         'docs' => 'Documentação',
         'referral' => 'Ganhe 30% de indicação',
