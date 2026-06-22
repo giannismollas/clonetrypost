@@ -10,8 +10,8 @@ return [
     ],
 
     'annual_banner' => [
-        'title' => 'Ahorra 2 meses con la facturación anual',
-        'description' => 'Cambia al anual y obtén 2 meses gratis — paga menos cada mes.',
+        'title' => 'Consigue 2 meses gratis',
+        'description' => 'Cambia a la facturación anual y paga menos al mes — el mismo plan, sin cambios.',
         'cta' => 'Cambiar a anual',
     ],
 

@@ -10,8 +10,8 @@ return [
     ],
 
     'annual_banner' => [
-        'title' => 'Economize 2 meses com a cobrança anual',
-        'description' => 'Mude para o anual e ganhe 2 meses grátis — pague menos por mês.',
+        'title' => 'Ganhe 2 meses grátis',
+        'description' => 'Mude para a cobrança anual e pague menos por mês — sem mudar nada do seu plano.',
         'cta' => 'Mudar para anual',
     ],
 

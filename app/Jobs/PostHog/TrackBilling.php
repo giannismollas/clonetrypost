@@ -39,7 +39,7 @@ class TrackBilling implements ShouldQueue
             return;
         }
 
-        $account = Account::with('plan')->find($this->accountId);
+        $account = Account::with(['plan', 'owner'])->find($this->accountId);
 
         if (! $account || ! $account->owner_id) {
             return;
@@ -53,6 +53,7 @@ class TrackBilling implements ShouldQueue
                 'plan' => $account->plan?->name,
                 'plan_slug' => $account->plan?->slug->value,
                 'previous_plan' => $this->previousPlan,
+                'persona' => $account->owner?->persona?->value,
             ],
             $account,
         );

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, router, usePage, usePoll } from '@inertiajs/vue3';
 import { IconLoader2 } from '@tabler/icons-vue';
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, onUnmounted, ref, watch } from 'vue';
 
 import { useTracking } from '@/composables/useTracking';
 import { accounts } from '@/routes/app';
@@ -10,8 +10,14 @@ import type { Auth } from '@/types';
 const props = defineProps<{
     subscriptionActive: boolean;
     fromCheckout: boolean;
+    persona?: string | null;
     conversion?: { value: number; currency: string; transaction_id: string } | null;
 }>();
+
+// Hold on the processing screen after firing the purchase event so PostHog and
+// the ad pixels (Google/Meta via dataLayer → GTM) have time to send before we
+// navigate away — an immediate redirect can cut those requests off.
+const REDIRECT_DELAY_MS = 5000;
 
 const page = usePage();
 
@@ -25,9 +31,10 @@ const { stop } = usePoll(2000, {
 
 const { trackPurchase } = useTracking();
 
-const tracked = ref(false);
+const finishing = ref(false);
+let redirectTimer: ReturnType<typeof setTimeout> | null = null;
 
-const goToAccounts = () => router.visit(accounts.url({ query: { openDialog: true } }));
+const goToAccounts = () => router.visit(accounts.url());
 
 // Fires `checkout.completed` exactly once for a real checkout. A trial-with-card
 // subscription is already `subscribed()` (status `trialing`) by the time the
@@ -36,24 +43,25 @@ const goToAccounts = () => router.visit(accounts.url({ query: { openDialog: true
 // from whichever path runs first (immediate active state or poll transition),
 // gated on `fromCheckout` so back-button/refresh visits don't over-count.
 const completePurchase = () => {
+    if (finishing.value) {
+        return;
+    }
+    finishing.value = true;
     stop();
 
-    if (! tracked.value && props.fromCheckout) {
-        tracked.value = true;
+    const plan = (page.props.auth as Auth | undefined)?.plan;
 
-        const plan = (page.props.auth as Auth | undefined)?.plan;
-        if (plan) {
-            trackPurchase(
-                {
-                    name: plan.name,
-                    interval: plan.interval,
-                },
-                props.conversion ?? null,
-            );
-        }
+    if (props.fromCheckout && plan) {
+        trackPurchase(
+            { name: plan.name, interval: plan.interval },
+            props.conversion ?? null,
+            props.persona ?? null,
+        );
     }
 
-    goToAccounts();
+    // Always hold for the same window before navigating, so PostHog and the ad
+    // pixels (Google/Meta via dataLayer → GTM) reliably flush.
+    redirectTimer = setTimeout(goToAccounts, REDIRECT_DELAY_MS);
 };
 
 watch(
@@ -68,6 +76,12 @@ watch(
 onMounted(() => {
     if (props.subscriptionActive) {
         completePurchase();
+    }
+});
+
+onUnmounted(() => {
+    if (redirectTimer) {
+        clearTimeout(redirectTimer);
     }
 });
 </script>

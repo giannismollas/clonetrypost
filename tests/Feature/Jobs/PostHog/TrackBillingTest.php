@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\PostHog\BillingEvent;
+use App\Enums\User\Persona;
 use App\Jobs\PostHog\SendEvent;
 use App\Jobs\PostHog\SyncUser;
 use App\Jobs\PostHog\TrackBilling;
@@ -48,6 +49,19 @@ test('handle captures event on the owner profile with account group attached', f
             && $job->payload['properties']['stripe_status'] === 'active'
             && array_key_exists('previous_plan', $job->payload['properties']);
     });
+});
+
+test('handle forwards the owner persona as an event property', function () {
+    $this->user->update(['persona' => Persona::Agency->value]);
+    Queue::fake();
+
+    (new TrackBilling((string) $this->account->id, BillingEvent::Created, $this->payload))
+        ->handle(app(PostHogService::class));
+
+    Queue::assertPushed(
+        SendEvent::class,
+        fn ($job) => ($job->payload['properties']['persona'] ?? null) === Persona::Agency->value,
+    );
 });
 
 test('handle forwards previousPlan as a property when supplied', function () {

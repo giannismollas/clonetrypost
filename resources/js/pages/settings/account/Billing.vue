@@ -99,8 +99,8 @@ const upgradeToAnnual = (): void => {
                     v-if="showAnnualBanner"
                     class="flex flex-wrap items-center gap-4 rounded-2xl border-2 border-foreground bg-emerald-100 p-5 shadow-2xs"
                 >
-                    <span class="inline-flex size-12 -rotate-3 items-center justify-center rounded-2xl border-2 border-foreground bg-emerald-300 shadow-2xs">
-                        <IconRosetteDiscountCheck class="size-6 text-foreground" stroke-width="2" />
+                    <span class="inline-flex size-12 -rotate-3 items-center justify-center rounded-2xl border-2 border-foreground bg-card shadow-2xs">
+                        <IconRosetteDiscountCheck class="size-6 text-emerald-600" stroke-width="2.25" />
                     </span>
                     <div class="min-w-0 flex-1">
                         <p class="text-base font-bold text-foreground">

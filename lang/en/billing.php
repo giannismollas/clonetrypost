@@ -10,8 +10,8 @@ return [
     ],
 
     'annual_banner' => [
-        'title' => 'Save 2 months with annual billing',
-        'description' => 'Switch to annual and get 2 months free — pay less every month.',
+        'title' => 'Get 2 months free',
+        'description' => 'Switch to annual billing and pay less every month — same plan, nothing else changes.',
         'cta' => 'Upgrade to annual',
     ],
 

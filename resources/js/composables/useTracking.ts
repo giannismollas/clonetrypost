@@ -33,10 +33,12 @@ export const useTracking = () => ({
     trackPurchase: (
         plan: { name: string; interval: string },
         conversion?: { value: number; currency: string; transaction_id: string } | null,
+        persona?: string | null,
     ) => {
         captureEvent('checkout.completed', {
             plan_name: plan.name,
             interval: plan.interval,
+            ...(persona ? { persona } : {}),
             ...(conversion ? {
                 conversion_value: conversion.value,
                 conversion_currency: conversion.currency,
@@ -48,6 +50,7 @@ export const useTracking = () => ({
             event: 'purchase',
             plan_name: plan.name,
             plan_interval: plan.interval,
+            ...(persona ? { persona } : {}),
             ...(conversion ? {
                 conversion_value: conversion.value,
                 conversion_currency: conversion.currency,
