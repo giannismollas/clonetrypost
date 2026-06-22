@@ -143,12 +143,12 @@ const DELETABLE_STATUSES: readonly string[] = [PostStatus.Draft, PostStatus.Sche
 const canEdit = (post: Post): boolean => EDITABLE_STATUSES.includes(post.status);
 const canDelete = (post: Post): boolean => DELETABLE_STATUSES.includes(post.status);
 
+const { canCreatePost } = useWorkspaceRole();
+
 const postUrl = (post: Post): string =>
-    canEdit(post) ? editPost.url(post.id) : showPost.url(post.id);
+    canCreatePost.value && canEdit(post) ? editPost.url(post.id) : showPost.url(post.id);
 
 const deleteModal = ref<InstanceType<typeof ConfirmDeleteModal> | null>(null);
-
-const { canCreatePost } = useWorkspaceRole();
 
 const handleDelete = (post: Post) => {
     deleteModal.value?.open({

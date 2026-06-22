@@ -60,3 +60,21 @@ test('a viewer can comment on a post', function () {
         'user_id' => $this->viewer->id,
     ]);
 });
+
+test('a viewer opening a draft post sees the read-only page instead of the editor', function () {
+    $this->actingAs($this->viewer)
+        ->get(route('app.posts.show', $this->post))
+        ->assertOk();
+});
+
+test('a member opening a draft post is redirected to the editor', function () {
+    $this->actingAs($this->member)
+        ->get(route('app.posts.show', $this->post))
+        ->assertRedirect(route('app.posts.edit', $this->post));
+});
+
+test('a viewer cannot open the post editor directly', function () {
+    $this->actingAs($this->viewer)
+        ->get(route('app.posts.edit', $this->post))
+        ->assertForbidden();
+});

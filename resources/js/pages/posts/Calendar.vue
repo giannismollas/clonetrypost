@@ -237,7 +237,7 @@ const getStatusColor = (status: string): string => {
 const EDITABLE_STATUSES: readonly string[] = [PostStatus.Draft, PostStatus.Scheduled];
 
 const getPostUrl = (post: Post): string => {
-    return EDITABLE_STATUSES.includes(post.status)
+    return canCreatePost.value && EDITABLE_STATUSES.includes(post.status)
         ? editPost.url(post.id)
         : showPost.url(post.id);
 };
