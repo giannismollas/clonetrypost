@@ -4,7 +4,7 @@ import { IconLoader2 } from '@tabler/icons-vue';
 import { onMounted, ref, watch } from 'vue';
 
 import { useTracking } from '@/composables/useTracking';
-import { home } from '@/routes/app';
+import { accounts } from '@/routes/app';
 import type { Auth } from '@/types';
 
 const props = defineProps<{
@@ -27,7 +27,7 @@ const { trackPurchase } = useTracking();
 
 const tracked = ref(false);
 
-const goHome = () => router.visit(home.url());
+const goToAccounts = () => router.visit(accounts.url({ query: { openDialog: true } }));
 
 // Fires `checkout.completed` exactly once for a real checkout. A trial-with-card
 // subscription is already `subscribed()` (status `trialing`) by the time the
@@ -53,7 +53,7 @@ const completePurchase = () => {
         }
     }
 
-    goHome();
+    goToAccounts();
 };
 
 watch(

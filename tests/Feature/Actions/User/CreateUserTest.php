@@ -8,7 +8,7 @@ use App\Models\Account;
 use App\Models\Workspace;
 use Illuminate\Support\Facades\Bus;
 
-test('CreateUser creates user with account but no workspace and no current_workspace_id', function () {
+test('CreateUser creates the owner a default workspace and sets it as current', function () {
     $user = CreateUser::execute([
         'name' => 'Jane Doe',
         'email' => 'jane@example.com',
@@ -17,10 +17,14 @@ test('CreateUser creates user with account but no workspace and no current_works
 
     expect($user->name)->toBe('Jane Doe');
     expect($user->email)->toBe('jane@example.com');
-    expect($user->current_workspace_id)->toBeNull();
     expect($user->account_id)->not->toBeNull();
-    expect(Workspace::count())->toBe(0);
     expect(Account::find($user->account_id))->not->toBeNull();
+
+    $workspace = $user->workspaces()->first();
+    expect($user->workspaces()->count())->toBe(1);
+    expect($workspace->name)->toBe("Jane Doe's Workspace");
+    expect($workspace->account_id)->toBe($user->account_id);
+    expect($user->fresh()->current_workspace_id)->toBe($workspace->id);
 });
 
 test('CreateUser sets account owner_id to the new user', function () {

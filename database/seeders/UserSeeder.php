@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Actions\User\CreateUser;
-use App\Actions\Workspace\CreateWorkspace;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -19,15 +18,13 @@ class UserSeeder extends Seeder
             return;
         }
 
-        $user = CreateUser::execute([
+        CreateUser::execute([
             'name' => 'Admin',
             'email' => 'admin@trypost.it',
             'password' => 'password',
             'email_verified_at' => now(),
             'timezone' => 'UTC',
         ]);
-
-        CreateWorkspace::execute($user, ['name' => 'My Workspace']);
 
         $this->command->info('Admin account created — change the password on first login:');
         $this->command->line('  email:    admin@trypost.it');

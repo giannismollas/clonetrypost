@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\User;
 
+use App\Actions\Workspace\CreateWorkspace;
 use App\Enums\Plan\Slug;
 use App\Jobs\PostHog\SyncUser;
 use App\Models\Account;
@@ -47,6 +48,10 @@ class CreateUser
             ], $utmParameters));
 
             $account->update(['owner_id' => $user->id]);
+
+            if (! $isInviteRegistration) {
+                CreateWorkspace::execute($user, ['name' => data_get($data, 'name')."'s Workspace"]);
+            }
 
             return $user;
         });

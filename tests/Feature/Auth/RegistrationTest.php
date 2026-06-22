@@ -24,7 +24,7 @@ test('new users can register', function () {
     $response->assertRedirect(route('register.success', absolute: false));
 });
 
-test('new users do not get a default workspace on registration', function () {
+test('new users get a default workspace on registration', function () {
     $this->post(route('register.store'), [
         'name' => 'Test User',
         'email' => 'test@example.com',
@@ -35,8 +35,9 @@ test('new users do not get a default workspace on registration', function () {
 
     expect($user)->not->toBeNull();
     expect($user->account_id)->not->toBeNull();
-    expect($user->workspaces()->count())->toBe(0);
-    expect($user->current_workspace_id)->toBeNull();
+    expect($user->workspaces()->count())->toBe(1);
+    expect($user->workspaces()->first()->name)->toBe("Test User's Workspace");
+    expect($user->current_workspace_id)->toBe($user->workspaces()->first()->id);
 });
 
 test('new users can register with a timezone preference', function () {
@@ -50,7 +51,7 @@ test('new users can register with a timezone preference', function () {
     $user = User::where('email', 'test@example.com')->first();
 
     expect($user)->not->toBeNull();
-    expect($user->workspaces()->count())->toBe(0);
+    expect($user->workspaces()->count())->toBe(1);
 });
 
 test('new users do not have verified email by default', function () {
