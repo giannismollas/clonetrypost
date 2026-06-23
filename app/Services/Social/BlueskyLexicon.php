@@ -21,6 +21,14 @@ final class BlueskyLexicon
 
     public const REFRESH_SESSION = 'com.atproto.server.refreshSession';
 
+    public const GET_SERVICE_AUTH = 'com.atproto.server.getServiceAuth';
+
+    public const VIDEO_UPLOAD = 'app.bsky.video.uploadVideo';
+
+    public const VIDEO_GET_JOB_STATUS = 'app.bsky.video.getJobStatus';
+
+    public const VIDEO_GET_UPLOAD_LIMITS = 'app.bsky.video.getUploadLimits';
+
     public const FEED_POST = 'app.bsky.feed.post';
 
     public const GET_POSTS = 'app.bsky.feed.getPosts';
@@ -28,6 +36,8 @@ final class BlueskyLexicon
     public const GET_PROFILE = 'app.bsky.actor.getProfile';
 
     public const EMBED_IMAGES = 'app.bsky.embed.images';
+
+    public const EMBED_VIDEO = 'app.bsky.embed.video';
 
     public const FACET_LINK = 'app.bsky.richtext.facet#link';
 
