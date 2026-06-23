@@ -5,6 +5,9 @@ set -e
 
 cd /var/www/html
 
+# Clear any baked development package caches (like Pail) to ensure we auto-discover only production packages
+rm -f bootstrap/cache/packages.php bootstrap/cache/services.php bootstrap/cache/config.php bootstrap/cache/routes-v7.php bootstrap/cache/events.php
+
 TARGET="${TRYPOST_TARGET:-dev}"
 
 # 1) Bootstrap .env from the Docker template on first dev boot. The bind-mount
