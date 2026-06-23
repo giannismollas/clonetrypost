@@ -60,6 +60,23 @@ class BlueskyPublisher
             }
         }
 
+        // A post carries either images or a single video, never both. Only look
+        // for a video when no image embed was built (mirrors the official client).
+        if ($embed === null) {
+            $video = $medias->first(fn ($media) => $media->isVideo());
+
+            if ($video) {
+                $videoBlob = $this->uploadVideo($account, $service, $video->url);
+
+                if ($videoBlob) {
+                    $embed = [
+                        '$type' => BlueskyLexicon::EMBED_VIDEO,
+                        'video' => $videoBlob,
+                    ];
+                }
+            }
+        }
+
         // Parse facets (links, mentions, hashtags) from text
         $text = $content ?? '';
         $facets = $this->parseFacets($text);
@@ -166,6 +183,245 @@ class BlueskyPublisher
         } finally {
             @unlink($tempFile);
         }
+    }
+
+    /**
+     * Upload a video to Bluesky and return the processed blob for embedding.
+     *
+     * Unlike images, video does not go to the PDS via uploadBlob. It is sent to
+     * the separate video service (video.bsky.app), which transcodes it and
+     * stores the resulting blob on the account's PDS. The flow is:
+     *   1. resolve the account's real PDS host (for the service-auth audience),
+     *   2. mint a service-auth token scoped to uploadBlob,
+     *   3. POST the bytes to app.bsky.video.uploadVideo,
+     *   4. poll app.bsky.video.getJobStatus until the blob is ready.
+     *
+     * Returns null on any failure so the post still publishes as text rather
+     * than crashing the whole job (mirrors uploadBlob()).
+     */
+    private function uploadVideo(SocialAccount $account, string $service, string $url): ?array
+    {
+        $videoService = (string) config('trypost.platforms.bluesky.video_service');
+        $did = (string) $account->platform_user_id;
+
+        $tempFile = tempnam(sys_get_temp_dir(), 'bsky_video_');
+
+        try {
+            $downloadResponse = Http::withOptions(['sink' => $tempFile])->timeout(600)->get($url);
+
+            if ($downloadResponse->failed()) {
+                throw new Exception('Failed to download video: HTTP '.$downloadResponse->status());
+            }
+
+            $fileSize = filesize($tempFile);
+
+            if ($fileSize === false || $fileSize === 0) {
+                Log::error('Bluesky failed to download video', ['url' => $url]);
+
+                return null;
+            }
+
+            // Bluesky caps videos at 100MB; skip oversized files rather than
+            // burning an upload that the service will reject.
+            if ($fileSize > 100 * 1024 * 1024) {
+                Log::error('Bluesky video exceeds 100MB limit', ['url' => $url, 'size' => $fileSize]);
+
+                return null;
+            }
+
+            $pds = $this->resolvePdsEndpoint($account, $service);
+            $pdsHost = parse_url($pds, PHP_URL_HOST);
+
+            if (! is_string($pdsHost) || $pdsHost === '') {
+                Log::error('Bluesky could not resolve PDS host for video upload', ['did' => $did]);
+
+                return null;
+            }
+
+            // The upload token is consumed by the video service to write the
+            // blob back to the user's PDS, so its audience is the PDS itself.
+            $uploadToken = $this->getServiceAuth($account, $pds, "did:web:{$pdsHost}", BlueskyLexicon::UPLOAD_BLOB);
+
+            if ($uploadToken === null) {
+                return null;
+            }
+
+            $name = bin2hex(random_bytes(8)).'.mp4';
+            $uploadUrl = "{$videoService}/xrpc/".BlueskyLexicon::VIDEO_UPLOAD
+                .'?did='.rawurlencode($did).'&name='.rawurlencode($name);
+
+            $stream = fopen($tempFile, 'r');
+
+            $response = $this->socialHttp()->withToken($uploadToken)
+                ->withHeaders(['Content-Type' => 'video/mp4'])
+                ->withBody($stream, 'video/mp4')
+                ->post($uploadUrl);
+
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+
+            $jobStatus = data_get($response->json(), 'jobStatus');
+
+            // A re-upload of identical bytes returns 409 with the already
+            // finished job, whose blob we can embed directly.
+            if ($response->failed() && $response->status() !== 409) {
+                Log::error('Bluesky video upload failed', [
+                    'status' => $response->status(),
+                    'body' => $this->redactResponseBody($response->body()),
+                ]);
+
+                return null;
+            }
+
+            if (data_get($jobStatus, 'blob')) {
+                return data_get($jobStatus, 'blob');
+            }
+
+            $jobId = data_get($jobStatus, 'jobId');
+
+            if (! is_string($jobId) || $jobId === '') {
+                Log::error('Bluesky video upload returned no jobId', [
+                    'body' => $this->redactResponseBody($response->body()),
+                ]);
+
+                return null;
+            }
+
+            return $this->pollVideoJob($account, $pds, $videoService, $jobId);
+        } catch (Exception $e) {
+            Log::error('Bluesky video upload exception', [
+                'error' => $e->getMessage(),
+                'url' => $url,
+            ]);
+
+            return null;
+        } finally {
+            @unlink($tempFile);
+        }
+    }
+
+    /**
+     * Poll the video service until the transcode job finishes, then return its
+     * blob. Returns null if the job fails or never completes in time.
+     */
+    private function pollVideoJob(SocialAccount $account, string $pds, string $videoService, string $jobId): ?array
+    {
+        $videoServiceDid = (string) config('trypost.platforms.bluesky.video_service_did');
+        $jobToken = $this->getServiceAuth($account, $pds, $videoServiceDid, BlueskyLexicon::VIDEO_GET_JOB_STATUS);
+
+        if ($jobToken === null) {
+            return null;
+        }
+
+        $statusUrl = "{$videoService}/xrpc/".BlueskyLexicon::VIDEO_GET_JOB_STATUS;
+
+        // Up to ~5 minutes; processing usually finishes within seconds. State is
+        // checked before sleeping so an already-complete job returns at once.
+        for ($attempt = 0; $attempt < 150; $attempt++) {
+            $response = $this->socialHttp()->withToken($jobToken)
+                ->get($statusUrl, ['jobId' => $jobId]);
+
+            $jobStatus = data_get($response->json(), 'jobStatus');
+            $state = data_get($jobStatus, 'state');
+
+            if ($state === 'JOB_STATE_COMPLETED' && data_get($jobStatus, 'blob')) {
+                return data_get($jobStatus, 'blob');
+            }
+
+            if ($state === 'JOB_STATE_FAILED') {
+                Log::error('Bluesky video processing failed', [
+                    'jobId' => $jobId,
+                    'message' => data_get($jobStatus, 'message'),
+                ]);
+
+                return null;
+            }
+
+            sleep(2);
+        }
+
+        Log::error('Bluesky video processing timed out', ['jobId' => $jobId]);
+
+        return null;
+    }
+
+    /**
+     * Mint a short-lived service-auth token (com.atproto.server.getServiceAuth)
+     * scoped to a single audience + method, used to authorize the video service.
+     */
+    private function getServiceAuth(SocialAccount $account, string $pds, string $aud, string $lxm): ?string
+    {
+        try {
+            $response = $this->socialHttp()->withToken($account->access_token)
+                ->get("{$pds}/xrpc/".BlueskyLexicon::GET_SERVICE_AUTH, [
+                    'aud' => $aud,
+                    'lxm' => $lxm,
+                    'exp' => now()->addMinutes(30)->timestamp,
+                ]);
+
+            if ($response->failed()) {
+                Log::error('Bluesky getServiceAuth failed', [
+                    'status' => $response->status(),
+                    'lxm' => $lxm,
+                    'body' => $this->redactResponseBody($response->body()),
+                ]);
+
+                return null;
+            }
+
+            $token = data_get($response->json(), 'token');
+
+            return is_string($token) && $token !== '' ? $token : null;
+        } catch (Throwable $e) {
+            Log::error('Bluesky getServiceAuth exception', ['error' => $e->getMessage(), 'lxm' => $lxm]);
+
+            return null;
+        }
+    }
+
+    /**
+     * Resolve the account's real PDS service endpoint from its DID document.
+     * Bluesky entryway accounts store the entryway URL as `service`, but video
+     * service-auth must be scoped to the actual PDS host (e.g. *.host.bsky.network).
+     * Falls back to the stored service URL when the DID document is unavailable.
+     */
+    private function resolvePdsEndpoint(SocialAccount $account, string $service): string
+    {
+        $did = (string) $account->platform_user_id;
+
+        try {
+            $docUrl = null;
+            if (str_starts_with($did, 'did:plc:')) {
+                $directory = (string) config('trypost.platforms.bluesky.plc_directory');
+                $docUrl = "{$directory}/".rawurlencode($did);
+            } elseif (str_starts_with($did, 'did:web:')) {
+                $host = substr($did, strlen('did:web:'));
+                $docUrl = "https://{$host}/.well-known/did.json";
+            }
+
+            if ($docUrl !== null) {
+                $response = $this->socialHttp()->get($docUrl);
+
+                if ($response->successful()) {
+                    $services = data_get($response->json(), 'service', []);
+                    foreach ($services as $entry) {
+                        $type = data_get($entry, 'type');
+                        $id = data_get($entry, 'id');
+                        if ($type === 'AtprotoPersonalDataServer' || $id === '#atproto_pds') {
+                            $endpoint = data_get($entry, 'serviceEndpoint');
+                            if (is_string($endpoint) && $endpoint !== '') {
+                                return $endpoint;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Throwable $e) {
+            Log::warning('Bluesky PDS resolution failed', ['did' => $did, 'error' => $e->getMessage()]);
+        }
+
+        return $service;
     }
 
     private function parseFacets(string $text): array

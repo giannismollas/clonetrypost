@@ -147,6 +147,12 @@ return [
             'default_service' => env('BLUESKY_DEFAULT_SERVICE', 'https://bsky.social'),
             // Web client where published posts are viewed (profile/post URLs).
             'web_app' => env('BLUESKY_WEB_APP', 'https://bsky.app'),
+            // Video upload service (separate from the PDS). Videos are processed
+            // here, then the resulting blob is embedded in the post record.
+            'video_service' => env('BLUESKY_VIDEO_SERVICE', 'https://video.bsky.app'),
+            'video_service_did' => env('BLUESKY_VIDEO_SERVICE_DID', 'did:web:video.bsky.app'),
+            // PLC directory, used to resolve an account's real PDS host from its DID.
+            'plc_directory' => env('BLUESKY_PLC_DIRECTORY', 'https://plc.directory'),
         ],
         'mastodon' => [
             'enabled' => env('MASTODON_ENABLED', true),
